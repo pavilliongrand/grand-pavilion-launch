@@ -32,13 +32,13 @@ const Hero = () => {
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-200 font-light max-w-3xl mx-auto px-4">
-            Premier Sports Academy & Turf Rental
+            Sports Academy & Turf Rental
           </p>
 
           {/* Description */}
           <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4">
-            Your destination for professional cricket, football training, and state-of-the-art turf facilities. 
-            World-class coaching meets premium infrastructure.
+            Train with experienced coaches and play on quality turf. 
+            Cricket, football, and more—all in one place.
           </p>
 
           {/* Contact Email */}
