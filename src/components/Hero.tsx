@@ -1,10 +1,10 @@
-import { MapPin } from "lucide-react";
+import { MapPin, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-sports.jpg";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img
@@ -16,45 +16,56 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-20 text-center">
-        <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 text-center">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
           {/* Badge */}
           <div className="inline-block">
-            <span className="px-4 py-2 bg-primary/20 border border-primary text-primary-foreground rounded-full text-sm font-semibold tracking-wide uppercase backdrop-blur-sm">
+            <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/20 border border-primary text-primary-foreground rounded-full text-xs sm:text-sm font-semibold tracking-wide uppercase backdrop-blur-sm">
               Coming Soon
             </span>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight px-2">
             Grand Pavilion
           </h1>
 
           {/* Subheading */}
-          <p className="text-xl md:text-2xl lg:text-3xl text-gray-200 font-light max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-200 font-light max-w-3xl mx-auto px-4">
             Premier Sports Academy & Turf Rental
           </p>
 
           {/* Description */}
-          <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4">
             Your destination for professional cricket, football training, and state-of-the-art turf facilities. 
             World-class coaching meets premium infrastructure.
           </p>
 
+          {/* Contact Email */}
+          <div className="flex items-center justify-center gap-2 text-primary animate-fade-in-up px-4">
+            <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
+            <a 
+              href="mailto:pavilliongrand@gmail.com"
+              className="text-sm sm:text-base md:text-lg font-medium hover:text-primary/80 transition-colors duration-200 underline decoration-primary/30 hover:decoration-primary"
+            >
+              pavilliongrand@gmail.com
+            </a>
+          </div>
+
           {/* CTA Button */}
-          <div className="pt-6 animate-fade-in-up">
+          <div className="pt-4 sm:pt-6 animate-fade-in-up px-4">
             <Button
               asChild
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-2xl"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-base sm:text-lg px-6 py-5 sm:px-8 sm:py-6 rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-2xl w-full sm:w-auto"
             >
               <a
                 href="https://maps.app.goo.gl/iQ7aq2wSJksdQdSw7"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2"
               >
-                <MapPin className="w-5 h-5" />
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                 Find Us on Maps
               </a>
             </Button>
@@ -63,7 +74,7 @@ const Hero = () => {
       </div>
 
       {/* Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-20 sm:h-32 bg-gradient-to-t from-background to-transparent z-10" />
     </section>
   );
 };
