@@ -36,38 +36,38 @@ const features = [
 
 const Features = () => {
   return (
-    <section className="py-20 px-4 bg-background">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="container mx-auto max-w-7xl">
         {/* Section Header */}
-        <div className="text-center mb-16 space-y-4 animate-fade-in">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground">
+        <div className="text-center mb-10 sm:mb-12 lg:mb-16 space-y-3 sm:space-y-4 animate-fade-in">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground px-4">
             What We Offer
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             State-of-the-art facilities and professional coaching for athletes of all levels
           </p>
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {features.map((feature, index) => (
             <Card
               key={index}
-              className="group border-2 hover:border-primary transition-all duration-300 hover:shadow-xl hover:scale-105 animate-fade-in-up bg-card/50 backdrop-blur-sm"
+              className="group border-2 hover:border-primary transition-all duration-300 hover:shadow-xl sm:hover:scale-105 animate-fade-in-up bg-card/50 backdrop-blur-sm"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-5 sm:p-6 space-y-3 sm:space-y-4">
                 {/* Icon */}
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
-                  <feature.icon className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors duration-300" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary sm:group-hover:scale-110 transition-all duration-300">
+                  <feature.icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary group-hover:text-primary-foreground transition-colors duration-300" />
                 </div>
 
                 {/* Content */}
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-card-foreground group-hover:text-primary transition-colors duration-300">
+                <div className="space-y-1.5 sm:space-y-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-card-foreground group-hover:text-primary transition-colors duration-300">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                     {feature.description}
                   </p>
                 </div>
