@@ -34,14 +34,14 @@ const LocationMap = () => {
           <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-800/50 bg-gray-900/80 backdrop-blur-sm">
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900/20 via-transparent to-black/20 pointer-events-none" />
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3923.6892745697447!2d76.22722!3d10.819253!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7c5dcbf903af9%3A0xee60446b9c4e6e65!2sGrand%20Pavilion%20Sports%20Turf!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+              src="https://www.google.com/maps?q=Grand+Pavilion+Sports+Turf,Palakkad,+Kerala&output=embed"
               width="100%"
               height="300"
               style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Grand Pavilion Sports Turf Location"
+              title="Grand Pavilion Sports Turf, Palakkad"
               className="w-full h-[250px] sm:h-[300px] lg:h-[400px]"
               onLoad={() => console.log('Map loaded successfully')}
               onError={() => console.error('Failed to load map')}
@@ -51,7 +51,7 @@ const LocationMap = () => {
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 max-w-md mx-auto">
             <a
-              href="https://maps.app.goo.gl/wwNmqftNskQb9V8g6"
+              href="https://www.google.com/maps/place/Palakkad,+Kerala"
               target="_blank"
               rel="noopener noreferrer"
               className="group relative p-4 sm:p-5 rounded-full bg-gradient-to-br from-gray-900/80 via-black/90 to-gray-900/80 backdrop-blur-lg border border-gray-700/30 text-blue-400 hover:text-blue-300 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-110 hover:-translate-y-1"
