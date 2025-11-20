@@ -55,7 +55,7 @@ const Hero = () => {
           {/* CTA Button */}
           <div className="pt-4 sm:pt-6 animate-fade-in-up px-4">
             <a
-              href="https://maps.app.goo.gl/iQ7aq2wSJksdQdSw7"
+              href="https://maps.app.goo.gl/wwNmqftNskQb9V8g6"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-base sm:text-lg px-6 py-5 sm:px-8 sm:py-6 rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-2xl w-full sm:w-auto"
