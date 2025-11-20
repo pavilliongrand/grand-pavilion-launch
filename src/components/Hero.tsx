@@ -1,4 +1,4 @@
-import { MapPin, Mail } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-sports.jpg";
 
@@ -26,42 +26,31 @@ const Hero = () => {
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight px-2">
+          <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight px-2 text-center">
             Grand Pavilion
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-200 font-light max-w-3xl mx-auto px-4">
+          <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-200 font-light max-w-3xl mx-auto px-4 text-center">
             Sports Academy & Turf Rental
           </p>
 
           {/* Description */}
-          <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4">
+          <p className="text-sm xs:text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4 text-center">
             Train with experienced coaches and play on quality turf. 
-            Cricket, football, and more—all in one place.
+            Cricket, football, and more, all in one place.
           </p>
 
-          {/* Contact Email */}
-          <div className="flex items-center justify-center gap-2 text-primary animate-fade-in-up px-4">
-            <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
-            <a 
-              href="mailto:pavilliongrand@gmail.com"
-              className="text-sm sm:text-base md:text-lg font-medium hover:text-primary/80 transition-colors duration-200 underline decoration-primary/30 hover:decoration-primary"
-            >
-              pavilliongrand@gmail.com
-            </a>
-          </div>
-
           {/* CTA Button */}
-          <div className="pt-4 sm:pt-6 animate-fade-in-up px-4">
+          <div className="pt-4 sm:pt-6 animate-fade-in-up px-4 w-full max-w-xs mx-auto">
             <a
               href="https://maps.app.goo.gl/wwNmqftNskQb9V8g6"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-base sm:text-lg px-6 py-5 sm:px-8 sm:py-6 rounded-full font-semibold transition-all duration-300 hover:scale-105 shadow-2xl w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-4 py-3 sm:px-6 sm:py-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg w-full"
             >
-              <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-              Find Us on Maps
+              <MapPin className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">Find Us</span>
             </a>
           </div>
         </div>
