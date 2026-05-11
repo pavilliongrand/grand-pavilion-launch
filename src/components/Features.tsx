@@ -51,7 +51,7 @@ const Features = () => {
   const gridAnimation = useScrollAnimation({ threshold: 0.2 });
 
   return (
-    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-black via-gray-900/10 to-black">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-black">
       <div className="container mx-auto max-w-7xl">
         {/* Section Header */}
         <div 

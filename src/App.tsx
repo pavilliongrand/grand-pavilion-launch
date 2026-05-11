@@ -1,37 +1,23 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import Hero from "@/components/Hero";
+import About from "@/components/About";
+import SportsServices from "@/components/SportsServices";
+import Pricing from "@/components/Pricing";
+import BookingWidget from "@/components/BookingWidget";
+import LocationMap from "@/components/LocationMap";
+import Footer from "@/components/Footer";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 3,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+const App = () => {
+  return (
+    <main className="min-h-screen bg-background font-sans">
+      <Hero />
+      <About />
+      <SportsServices />
+      <Pricing />
+      <BookingWidget />
+      <LocationMap />
+      <Footer />
+    </main>
+  );
+};
 
 export default App;

@@ -1,63 +1,74 @@
-import { MapPin } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-sports.jpg";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
-      {/* Background Image with Overlay */}
+    <section className="relative h-screen w-full overflow-hidden bg-black">
+      {/* Background Image with Better Visibility */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={heroImage}
-          alt="Grand Pavilion Sports Facility"
-          className="w-full h-full object-cover"
+        <div className="absolute inset-0 opacity-50" 
+          style={{
+            backgroundImage: `url('/hero-sports.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/90" />
+        {/* Animated gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-amber-900/30 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 text-center">
-        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
-          {/* Badge */}
+      <div className="container relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl space-y-8 animate-fade-in">
+          {/* Gold Logo/Brand Name */}
           <div className="inline-block">
-            <span className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/20 border border-primary text-primary-foreground rounded-full text-xs sm:text-sm font-semibold tracking-wide uppercase backdrop-blur-sm">
-              Coming Soon
+            <span className="text-amber-400 font-bold tracking-widest uppercase text-sm md:text-base border-b-2 border-amber-400 pb-1">
+              Est. 2025
             </span>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-tight px-2 text-center">
-            Grand Pavilion
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight font-heading leading-tight">
+            GRAND PAVILION <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500">
+              SPORTS TURF
+            </span>
           </h1>
 
           {/* Subheading */}
-          <p className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-200 font-light max-w-3xl mx-auto px-4 text-center">
-            Sports Academy & Turf Rental
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-2xl font-light leading-relaxed">
+            Premium Cricket & Football Facilities in Palakkad. <br className="hidden sm:block" />
+            Experience professional standards where passion meets excellence.
           </p>
 
-          {/* Description */}
-          <p className="text-sm xs:text-base sm:text-lg md:text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed px-4 text-center">
-            Train with experienced coaches and play on quality turf. 
-            Cricket, football, and more, all in one place.
-          </p>
-
-          {/* CTA Button */}
-          <div className="pt-4 sm:pt-6 animate-fade-in-up px-4 w-full max-w-xs mx-auto">
-            <a
-              href="https://maps.app.goo.gl/A6USjUjBrMueXuZJ6"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-4 py-3 sm:px-6 sm:py-4 rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-lg w-full"
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-5 pt-8">
+            <Link to="/booking">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-black font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105"
+              >
+                <Calendar className="mr-2 h-6 w-6" />
+                Book a Slot
+              </Button>
+            </Link>
+            <Button
+              size="lg"
+              variant="outline"
+              className="bg-transparent text-amber-400 border-2 border-amber-500/50 hover:bg-amber-500 hover:text-black font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105"
             >
-              <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">Find Us</span>
-            </a>
+              View Facilities
+              <ArrowRight className="ml-2 h-6 w-6" />
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 sm:h-32 bg-gradient-to-t from-background to-transparent z-10" />
+      {/* Scroll Indicator */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce hidden md:block">
+        <div className="w-[2px] h-16 bg-gradient-to-b from-amber-500 to-transparent shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
+      </div>
     </section>
   );
 };

@@ -53,6 +53,7 @@ export const useScrollAnimation = (options?: UseInViewOptions) => {
   
   return {
     ref,
+    isVisible: isInView,
     className: isInView 
       ? "animate-fade-in-up opacity-100 translate-y-0" 
       : "opacity-0 translate-y-8",
