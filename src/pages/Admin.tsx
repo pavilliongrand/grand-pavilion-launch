@@ -308,22 +308,22 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white">
+    <div className="min-h-screen bg-[#F5F7FA] text-gray-900">
       {/* Header */}
-      <header className="border-b border-zinc-800/50 backdrop-blur-xl bg-black/40 sticky top-0 z-50">
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="inline-flex items-center gap-1.5 text-gray-400 hover:text-amber-500 transition-colors">
+            <Link to="/" className="inline-flex items-center gap-1.5 text-gray-600 hover:text-[#84cc16] transition-colors">
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="font-semibold text-sm sm:text-base hidden sm:inline">Back</span>
             </Link>
             <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-1.5 sm:gap-2">
-              <Settings className="w-5 h-5 sm:w-7 sm:h-7 text-amber-500" />
+              <Settings className="w-5 h-5 sm:w-7 sm:h-7 text-[#84cc16]" />
               Admin
             </h1>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 transition-all text-xs sm:text-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-red-600 transition-all text-xs sm:text-sm"
             >
               <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Logout</span>
@@ -335,38 +335,38 @@ const Admin = () => {
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
         {/* Stats Overview */}
         <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-4 sm:mb-8">
-          <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/50 sm:border-2 rounded-xl sm:rounded-2xl p-3 sm:p-6">
+          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-amber-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                <IndianRupee className="w-4 h-4 sm:w-6 sm:h-6 text-amber-500" />
+              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-[#84cc16]/20 rounded-lg sm:rounded-xl flex items-center justify-center">
+                <IndianRupee className="w-4 h-4 sm:w-6 sm:h-6 text-[#65a30d]" />
               </div>
               <div>
-                <div className="text-[10px] sm:text-sm text-gray-400 mb-0.5">Revenue</div>
-                <div className="text-sm sm:text-2xl font-bold">₹{getTotalRevenue().toLocaleString()}</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Revenue</div>
+                <div className="text-sm sm:text-2xl font-bold text-gray-900">₹{getTotalRevenue().toLocaleString()}</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/50 sm:border-2 rounded-xl sm:rounded-2xl p-3 sm:p-6">
+          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-blue-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-blue-500" />
+                <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
               </div>
               <div>
-                <div className="text-[10px] sm:text-sm text-gray-400 mb-0.5">Bookings</div>
-                <div className="text-sm sm:text-2xl font-bold">{bookings.length}</div>
+                <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Bookings</div>
+                <div className="text-sm sm:text-2xl font-bold text-gray-900">{bookings.length}</div>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/50 sm:border-2 rounded-xl sm:rounded-2xl p-3 sm:p-6">
+          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-green-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-green-500" />
+                <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
               </div>
               <div>
-                <div className="text-[10px] sm:text-sm text-gray-400 mb-0.5">Confirmed</div>
-                <div className="text-sm sm:text-2xl font-bold">
+                <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Confirmed</div>
+                <div className="text-sm sm:text-2xl font-bold text-gray-900">
                   {bookings.filter(b => b.status === 'confirmed').length}
                 </div>
               </div>
@@ -375,7 +375,7 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-8 bg-zinc-900/50 p-1.5 sm:p-2 rounded-xl border border-zinc-800 overflow-x-auto w-full">
+        <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-8 bg-white shadow-sm p-1.5 sm:p-2 rounded-xl border border-gray-200 overflow-x-auto w-full">
           {[
             { id: "bookings", label: "Bookings", icon: Calendar },
             { id: "pricing", label: "Pricing", icon: IndianRupee },
@@ -387,8 +387,8 @@ const Admin = () => {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap text-xs sm:text-sm ${
                 activeTab === tab.id
-                  ? 'bg-amber-500 text-black'
-                  : 'text-gray-400 hover:text-white'
+                  ? 'bg-[#A3E635] text-[#1A2E05]'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
               <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -400,12 +400,12 @@ const Admin = () => {
 
         {/* Bookings Tab */}
         {activeTab === "bookings" && (
-          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-2xl font-bold">All Bookings</h2>
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-900">All Bookings</h2>
               <button
                 onClick={fetchBookings}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
+                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-900"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
                 Refresh
@@ -414,45 +414,45 @@ const Admin = () => {
 
             {loading ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#84cc16]" />
               </div>
             ) : bookings.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                <Calendar className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-50" />
+                <Calendar className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-50 text-gray-400" />
                 <p className="text-sm sm:text-base">No bookings found</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {bookings.map(booking => (
-                  <div key={booking.id} className="p-3 sm:p-4 bg-zinc-800/50 border border-zinc-700/50 rounded-xl">
+                  <div key={booking.id} className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-xl">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <div className="font-semibold text-sm sm:text-base">{booking.name || 'N/A'}</div>
-                        <div className="text-xs text-gray-400">{booking.phone}</div>
+                        <div className="font-semibold text-sm sm:text-base text-gray-900">{booking.name || 'N/A'}</div>
+                        <div className="text-xs text-gray-500">{booking.phone}</div>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${
                           booking.status === 'confirmed'
-                            ? 'bg-green-500/20 text-green-500'
-                            : 'bg-red-500/20 text-red-500'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
                         }`}>
                           {booking.status}
                         </span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm mb-2">
+                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm mb-2 text-gray-900">
                       <div><span className="text-gray-500">Sport:</span> <span className="capitalize font-medium">{booking.sport}</span></div>
                       <div><span className="text-gray-500">Date:</span> <span className="font-medium">{booking.date}</span></div>
                       <div><span className="text-gray-500">Slots:</span> <span className="font-medium">{booking.slots.length}</span></div>
-                      <div><span className="text-gray-500">Amount:</span> <span className="font-semibold text-amber-500">₹{booking.amount}</span></div>
+                      <div><span className="text-gray-500">Amount:</span> <span className="font-semibold text-[#65a30d]">₹{booking.amount}</span></div>
                     </div>
                     {booking.slotTimes && booking.slotTimes.length > 0 && (
                       <div className="text-[10px] sm:text-xs text-gray-500 mb-2">{booking.slotTimes.join(', ')}</div>
                     )}
-                    <div className="flex gap-2 pt-2 border-t border-zinc-700/50">
+                    <div className="flex gap-2 pt-2 border-t border-gray-200">
                       <button
                         onClick={() => cancelBooking(booking.id)}
-                        className="px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 border border-red-500/30 rounded-lg transition-all flex items-center gap-1"
+                        className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-all flex items-center gap-1"
                       >
                         <Trash2 className="w-3 h-3" />
                         Cancel
@@ -467,16 +467,16 @@ const Admin = () => {
 
         {/* Pricing Tab */}
         {activeTab === "pricing" && (
-          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-xl sm:rounded-2xl p-4 sm:p-8">
+          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-8 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-5 sm:mb-8">
               <div>
-                <h2 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2">Pricing & Hours</h2>
-                <p className="text-gray-400 text-xs sm:text-base">Set rates and operating hours</p>
+                <h2 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 text-gray-900">Pricing & Hours</h2>
+                <p className="text-gray-500 text-xs sm:text-base">Set rates and operating hours</p>
               </div>
               <button
                 onClick={savePricing}
                 disabled={saving}
-                className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:from-zinc-700 disabled:to-zinc-700 text-black disabled:text-gray-500 font-bold rounded-xl transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-lg shadow-amber-500/20 text-sm sm:text-base"
+                className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 bg-[#A3E635] hover:bg-[#84cc16] disabled:bg-gray-200 text-[#1A2E05] disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-sm text-sm sm:text-base"
               >
                 {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                 Save Changes
@@ -484,17 +484,17 @@ const Admin = () => {
             </div>
 
             {/* Sport Availability Section */}
-            <div className="mb-8 p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-green-500/30 rounded-2xl">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-green-400" />
+            <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-2xl">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900">
+                <Settings className="w-5 h-5 text-green-600" />
                 Sport Availability
               </h3>
-              <p className="text-sm text-gray-400 mb-4">Enable or disable bookings for specific sports</p>
+              <p className="text-sm text-gray-600 mb-4">Enable or disable bookings for specific sports</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
+                <div className="p-4 bg-white rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-lg mb-1">Cricket</h4>
+                      <h4 className="font-bold text-lg mb-1 text-gray-900">Cricket</h4>
                       <p className="text-xs text-gray-500">Allow cricket bookings</p>
                     </div>
                     <button
@@ -512,16 +512,16 @@ const Admin = () => {
                   </div>
                   <div className="mt-3 text-xs">
                     <span className={`font-semibold ${
-                      sportAvailability.cricket ? 'text-green-400' : 'text-red-400'
+                      sportAvailability.cricket ? 'text-green-600' : 'text-red-600'
                     }`}>
                       {sportAvailability.cricket ? '✓ Enabled' : '✗ Disabled'}
                     </span>
                   </div>
                 </div>
-                <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
+                <div className="p-4 bg-white rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-lg mb-1">Football</h4>
+                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football</h4>
                       <p className="text-xs text-gray-500">Allow football bookings</p>
                     </div>
                     <button
@@ -539,7 +539,7 @@ const Admin = () => {
                   </div>
                   <div className="mt-3 text-xs">
                     <span className={`font-semibold ${
-                      sportAvailability.football ? 'text-green-400' : 'text-red-400'
+                      sportAvailability.football ? 'text-green-600' : 'text-red-600'
                     }`}>
                       {sportAvailability.football ? '✓ Enabled' : '✗ Disabled'}
                     </span>
@@ -549,18 +549,18 @@ const Admin = () => {
             </div>
 
             {/* Working Hours Section */}
-            <div className="mb-8 p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-2 border-blue-500/30 rounded-2xl">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-400" />
+            <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-2xl">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900">
+                <Clock className="w-5 h-5 text-blue-600" />
                 Operating Hours
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Opening Time</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Opening Time</label>
                   <select
                     value={workingHours.start}
                     onChange={(e) => setWorkingHours(prev => ({ ...prev, start: Number(e.target.value) }))}
-                    className="w-full px-4 py-3 bg-zinc-800/80 border-2 border-zinc-700 rounded-xl text-white font-semibold focus:border-blue-400 focus:outline-none transition-all"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 font-semibold focus:border-blue-500 focus:outline-none transition-all"
                   >
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>
@@ -570,11 +570,11 @@ const Admin = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Closing Time</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Closing Time</label>
                   <select
                     value={workingHours.end}
                     onChange={(e) => setWorkingHours(prev => ({ ...prev, end: Number(e.target.value) }))}
-                    className="w-full px-4 py-3 bg-zinc-800/80 border-2 border-zinc-700 rounded-xl text-white font-semibold focus:border-blue-400 focus:outline-none transition-all"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 font-semibold focus:border-blue-500 focus:outline-none transition-all"
                   >
                     {Array.from({ length: 24 }, (_, i) => i + 1).map(i => (
                       <option key={i} value={i}>
@@ -584,8 +584,8 @@ const Admin = () => {
                   </select>
                 </div>
               </div>
-              <div className="mt-4 p-3 bg-blue-500/5 rounded-lg">
-                <p className="text-sm text-blue-300">
+              <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+                <p className="text-sm text-blue-800">
                   Slots will only be available between <strong>{workingHours.start.toString().padStart(2, '0')}:00</strong> and <strong>{workingHours.end.toString().padStart(2, '0')}:00</strong>
                 </p>
               </div>
@@ -593,13 +593,13 @@ const Admin = () => {
 
             {/* Hourly Pricing Section */}
             <div>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <IndianRupee className="w-5 h-5 text-amber-400" />
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-900">
+                <IndianRupee className="w-5 h-5 text-[#84cc16]" />
                 Hourly Rates
               </h3>
               
-              <div className="mb-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                <p className="text-sm text-amber-300">
+              <div className="mb-4 p-4 bg-[#F7FEE7] border border-[#A3E635]/30 rounded-xl">
+                <p className="text-sm text-[#65a30d]">
                   Set custom prices for each hour. Only hours within operating hours will accept bookings.
                 </p>
               </div>
@@ -607,10 +607,10 @@ const Admin = () => {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-zinc-700">
-                      <th className="pb-4 text-left font-bold text-gray-300 uppercase text-xs tracking-wider">Time Slot</th>
-                      <th className="pb-4 text-center font-bold text-gray-300 uppercase text-xs tracking-wider">Cricket Price</th>
-                      <th className="pb-4 text-center font-bold text-gray-300 uppercase text-xs tracking-wider">Football Price</th>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="pb-4 text-left font-bold text-gray-500 uppercase text-xs tracking-wider">Time Slot</th>
+                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">Cricket Price</th>
+                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">Football Price</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -619,15 +619,15 @@ const Admin = () => {
                       return (
                         <tr 
                           key={rule.hour} 
-                          className={`border-b border-zinc-800/50 transition-all ${
+                          className={`border-b border-gray-100 transition-all ${
                             isWithinWorkingHours 
-                              ? 'bg-zinc-800/30 hover:bg-zinc-800/50' 
-                              : 'opacity-40 bg-zinc-900/50'
+                              ? 'bg-white hover:bg-gray-50' 
+                              : 'opacity-50 bg-gray-100'
                           }`}
                         >
-                          <td className="py-4 font-semibold text-gray-200">
+                          <td className="py-4 font-semibold text-gray-900">
                             <div className="flex items-center gap-2">
-                              {!isWithinWorkingHours && <Lock className="w-4 h-4 text-gray-600" />}
+                              {!isWithinWorkingHours && <Lock className="w-4 h-4 text-gray-400" />}
                               <span className="text-base">
                                 {rule.hour.toString().padStart(2, '0')}:00 - {(rule.hour + 1).toString().padStart(2, '0')}:00
                               </span>
@@ -636,13 +636,13 @@ const Admin = () => {
                           <td className="py-4">
                             <div className="flex justify-center">
                               <div className="relative w-32">
-                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                   type="number"
                                   value={rule.cricketPrice}
                                   onChange={(e) => updateHourlyPrice(rule.hour, 'cricket', Number(e.target.value))}
                                   disabled={!isWithinWorkingHours}
-                                  className="w-full pl-9 pr-3 py-2.5 bg-zinc-800/80 border-2 border-zinc-700 rounded-lg text-white font-bold text-center focus:border-amber-500 focus:outline-none focus:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                                 />
                               </div>
                             </div>
@@ -650,13 +650,13 @@ const Admin = () => {
                           <td className="py-4">
                             <div className="flex justify-center">
                               <div className="relative w-32">
-                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                   type="number"
                                   value={rule.footballPrice}
                                   onChange={(e) => updateHourlyPrice(rule.hour, 'football', Number(e.target.value))}
                                   disabled={!isWithinWorkingHours}
-                                  className="w-full pl-9 pr-3 py-2.5 bg-zinc-800/80 border-2 border-zinc-700 rounded-lg text-white font-bold text-center focus:border-amber-500 focus:outline-none focus:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                                 />
                               </div>
                             </div>
@@ -675,19 +675,19 @@ const Admin = () => {
         {activeTab === "slots" && (
           <div className="space-y-6">
             {/* Block New Slots */}
-            <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
+              <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-900">
                 <Ban className="w-6 h-6 text-red-500" />
                 Block Slots
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Sport</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Sport</label>
                   <select
                     value={blockSport}
                     onChange={(e) => setBlockSport(e.target.value as any)}
-                    className="w-full px-4 py-3 bg-zinc-800 border-2 border-zinc-700 rounded-xl text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
                   >
                     <option value="cricket">Cricket</option>
                     <option value="football">Football</option>
@@ -695,13 +695,13 @@ const Admin = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-2">Date</label>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Date</label>
                   <input
                     type="date"
                     value={blockDate}
                     min={getTodayDate()}
                     onChange={(e) => setBlockDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-zinc-800 border-2 border-zinc-700 rounded-xl text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
                   />
                 </div>
               </div>
@@ -709,18 +709,18 @@ const Admin = () => {
               {blockDate && (
                 <>
                   <div className="mb-4">
-                    <label className="block text-sm font-semibold mb-2">Reason (Optional)</label>
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">Reason (Optional)</label>
                     <input
                       type="text"
                       value={blockReason}
                       onChange={(e) => setBlockReason(e.target.value)}
                       placeholder="e.g., Maintenance, Private event"
-                      className="w-full px-4 py-3 bg-zinc-800 border-2 border-zinc-700 rounded-xl text-white focus:border-amber-500 focus:outline-none"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
                     />
                   </div>
 
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Select Slots to Block</h3>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-900">Select Slots to Block</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                       {availableSlotsForBlock.map(slot => (
                         <button
@@ -735,16 +735,16 @@ const Admin = () => {
                             }
                           }}
                           disabled={!slot.available}
-                          className={`p-4 rounded-xl border-2 transition-all ${
+                          className={`p-4 rounded-xl border transition-all ${
                             selectedBlockSlots.includes(slot.id)
-                              ? 'border-red-500 bg-red-500/20'
+                              ? 'border-red-500 bg-red-50 text-red-700'
                               : slot.available
-                              ? 'border-zinc-700 hover:border-red-500/50 bg-zinc-800/50'
-                              : 'border-zinc-800 bg-zinc-900/50 opacity-50 cursor-not-allowed'
+                              ? 'border-gray-200 hover:border-red-300 bg-white text-gray-700'
+                              : 'border-gray-100 bg-gray-50 text-gray-400 opacity-60 cursor-not-allowed'
                           }`}
                         >
                           <div className="font-semibold text-sm mb-1">{slot.time}</div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs">
                             {slot.available ? 'Available' : 'Blocked'}
                           </div>
                         </button>
@@ -755,7 +755,7 @@ const Admin = () => {
                   <button
                     onClick={blockSlots}
                     disabled={saving || selectedBlockSlots.length === 0}
-                    className="w-full px-6 py-4 bg-red-500 hover:bg-red-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                    className="w-full px-6 py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:cursor-not-allowed text-white disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
                   >
                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Ban className="w-5 h-5" />}
                     Block {selectedBlockSlots.length} Slot{selectedBlockSlots.length !== 1 ? 's' : ''}
@@ -765,12 +765,12 @@ const Admin = () => {
             </div>
 
             {/* Currently Blocked Slots */}
-            <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
+            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">Currently Blocked Slots</h2>
+                <h2 className="text-2xl font-bold text-gray-900">Currently Blocked Slots</h2>
                 <button
                   onClick={fetchBlockedSlots}
-                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg transition-all flex items-center gap-2"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
                   Refresh
@@ -779,7 +779,7 @@ const Admin = () => {
 
               {loading ? (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                  <Loader2 className="w-8 h-8 animate-spin text-[#84cc16]" />
                 </div>
               ) : blockedSlots.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
@@ -789,16 +789,16 @@ const Admin = () => {
               ) : (
                 <div className="space-y-3">
                   {blockedSlots.map(block => (
-                    <div key={block.id} className="p-4 bg-zinc-800/50 border border-red-500/30 rounded-xl">
+                    <div key={block.id} className="p-4 bg-red-50 border border-red-200 rounded-xl">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm font-semibold capitalize">
+                            <span className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm font-semibold capitalize">
                               {block.sport}
                             </span>
-                            <span className="text-gray-400">{block.date}</span>
+                            <span className="text-gray-500 font-medium">{block.date}</span>
                           </div>
-                          <div className="text-sm text-gray-300 mb-2">
+                          <div className="text-sm text-gray-700 mb-2">
                             <strong>Blocked Slots:</strong> {block.slotTimes?.join(', ') || `${block.slotIds.length} slots`}
                           </div>
                           {block.reason && (
@@ -809,7 +809,7 @@ const Admin = () => {
                         </div>
                         <button
                           onClick={() => unblockSlots(block.id)}
-                          className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 transition-all flex items-center gap-2"
+                          className="px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg text-green-700 transition-all flex items-center gap-2"
                         >
                           <Unlock className="w-4 h-4" />
                           Unblock
@@ -825,34 +825,34 @@ const Admin = () => {
 
         {/* Analytics Tab */}
         {activeTab === "analytics" && (
-          <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold mb-6">Booking Analytics</h2>
+          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">Booking Analytics</h2>
             
             <div className="space-y-6">
               {/* Revenue & Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-6 bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50 rounded-xl">
-                  <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-                    <IndianRupee className="w-4 h-4" />
+                <div className="p-6 bg-green-50 border border-green-200 rounded-xl">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                    <IndianRupee className="w-4 h-4 text-green-600" />
                     Total Revenue
                   </div>
-                  <div className="text-3xl font-bold">₹{getTotalRevenue().toLocaleString()}</div>
+                  <div className="text-3xl font-bold text-gray-900">₹{getTotalRevenue().toLocaleString()}</div>
                 </div>
 
-                <div className="p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50 rounded-xl">
-                  <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-                    <Calendar className="w-4 h-4" />
+                <div className="p-6 bg-purple-50 border border-purple-200 rounded-xl">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                    <Calendar className="w-4 h-4 text-purple-600" />
                     Total Bookings
                   </div>
-                  <div className="text-3xl font-bold">{bookings.length}</div>
+                  <div className="text-3xl font-bold text-gray-900">{bookings.length}</div>
                 </div>
 
-                <div className="p-6 bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-2 border-amber-500/50 rounded-xl">
-                  <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
-                    <TrendingUp className="w-4 h-4" />
+                <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
                     Avg Booking Value
                   </div>
-                  <div className="text-3xl font-bold">
+                  <div className="text-3xl font-bold text-gray-900">
                     ₹{bookings.length > 0 ? Math.round(getTotalRevenue() / bookings.length).toLocaleString() : 0}
                   </div>
                 </div>
@@ -860,9 +860,9 @@ const Admin = () => {
 
               {/* Sport Distribution */}
               <div className="grid grid-cols-2 gap-6">
-                <div className="p-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50 rounded-xl">
-                  <div className="text-sm text-gray-400 mb-2">Cricket Bookings</div>
-                  <div className="text-3xl font-bold">
+                <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
+                  <div className="text-sm text-gray-500 mb-2">Cricket Bookings</div>
+                  <div className="text-3xl font-bold text-gray-900">
                     {bookings.filter(b => b.sport === 'cricket').length}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
@@ -870,9 +870,9 @@ const Admin = () => {
                   </div>
                 </div>
 
-                <div className="p-6 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-2 border-blue-500/50 rounded-xl">
-                  <div className="text-sm text-gray-400 mb-2">Football Bookings</div>
-                  <div className="text-3xl font-bold">
+                <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
+                  <div className="text-sm text-gray-500 mb-2">Football Bookings</div>
+                  <div className="text-3xl font-bold text-gray-900">
                     {bookings.filter(b => b.sport === 'football').length}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
@@ -883,19 +883,19 @@ const Admin = () => {
 
               {/* Popular Hours */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Most Popular Time Slots</h3>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Most Popular Time Slots</h3>
                 <div className="space-y-2">
                   {getPopularHours().length === 0 ? (
                     <p className="text-gray-500">No booking data available</p>
                   ) : (
                     getPopularHours().map(([hour, count], index) => (
-                      <div key={hour} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                      <div key={hour} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
                         <div className="flex items-center gap-3">
-                          <span className="text-amber-500 font-bold">#{index + 1}</span>
+                          <span className="text-[#84cc16] font-bold">#{index + 1}</span>
                           <Clock className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium">{hour}</span>
+                          <span className="font-medium text-gray-900">{hour}</span>
                         </div>
-                        <span className="text-amber-500 font-bold">{count} bookings</span>
+                        <span className="text-[#65a30d] font-bold">{count} bookings</span>
                       </div>
                     ))
                   )}
@@ -904,7 +904,7 @@ const Admin = () => {
 
               {/* Bookings by Date */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Bookings by Date</h3>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900">Bookings by Date</h3>
                 <div className="space-y-2">
                   {Object.entries(getBookingsByDate()).length === 0 ? (
                     <p className="text-gray-500">No booking data available</p>
@@ -913,9 +913,9 @@ const Admin = () => {
                       .sort((a, b) => b[0].localeCompare(a[0]))
                       .slice(0, 7)
                       .map(([date, count]) => (
-                        <div key={date} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
-                          <span className="font-medium">{new Date(date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                          <span className="text-amber-500 font-bold">{count} bookings</span>
+                        <div key={date} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                          <span className="font-medium text-gray-900">{new Date(date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          <span className="text-[#65a30d] font-bold">{count} bookings</span>
                         </div>
                       ))
                   )}

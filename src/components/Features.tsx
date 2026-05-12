@@ -51,7 +51,7 @@ const Features = () => {
   const gridAnimation = useScrollAnimation({ threshold: 0.2 });
 
   return (
-    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-black">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="container mx-auto max-w-7xl">
         {/* Section Header */}
         <div 
@@ -59,12 +59,12 @@ const Features = () => {
           className={`text-center mb-12 sm:mb-16 lg:mb-20 space-y-4 sm:space-y-6 transition-all duration-700 ${headerAnimation.className}`}
         >
           <div className="space-y-4">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground px-4 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 px-4 tracking-tight">
               What We Offer
             </h2>
-            <div className="w-20 h-1 bg-gradient-to-r from-amber-600/50 via-amber-500 to-amber-600/50 mx-auto rounded-full shadow-lg shadow-amber-500/30" />
+            <div className="w-20 h-1 bg-gradient-to-r from-[#A3E635]/50 via-[#84cc16] to-[#A3E635]/50 mx-auto rounded-full shadow-sm" />
           </div>
-          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto px-4 leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-4 leading-relaxed">
             Everything you need to train, play, and improve your game
           </p>
         </div>
@@ -77,39 +77,36 @@ const Features = () => {
           {features.map((feature, index) => (
             <article
               key={index}
-              className="group relative bg-gradient-to-br from-gray-900/40 via-black/60 to-gray-900/40 backdrop-blur-lg border border-gray-700/20 rounded-xl p-4 sm:p-6 lg:p-8 transition-all duration-700 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-500/10 hover:-translate-y-2 hover:backdrop-blur-xl"
+              className="group relative bg-[#F5F7FA] border border-gray-100 rounded-xl p-4 sm:p-6 lg:p-8 transition-all duration-700 hover:border-[#84cc16]/30 hover:shadow-lg hover:shadow-[#A3E635]/10 hover:-translate-y-2"
               style={{ 
                 animationDelay: `${index * 0.15}s`,
               }}
             >
               {/* Premium gradient overlay */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-500/3 via-transparent to-white/2 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              {/* Elegant glow effect */}
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-600/10 blur-2xl" />
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#A3E635]/5 via-transparent to-white/50 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               
               <div className="relative space-y-4 sm:space-y-5 lg:space-y-6">
                 {/* Icon Container */}
                 <div className="relative">
-                  <div className={`inline-flex p-3 sm:p-4 rounded-xl ${feature.color} transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg group-hover:shadow-xl`}>
-                    <feature.icon className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 ${feature.iconColor} transition-all duration-500 drop-shadow-sm`} />
+                  <div className={`inline-flex p-3 sm:p-4 rounded-xl bg-white shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-md`}>
+                    <feature.icon className={`w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-[#84cc16] transition-all duration-500 drop-shadow-sm`} />
                   </div>
                   {/* Enhanced glow effect */}
-                  <div className={`absolute inset-0 rounded-xl ${feature.color} opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500 animate-pulse`} />
-                  <div className={`absolute inset-0 rounded-xl ${feature.color} opacity-0 group-hover:opacity-20 blur-2xl transition-all duration-700`} />
+                  <div className={`absolute inset-0 rounded-xl bg-[#A3E635] opacity-0 group-hover:opacity-20 blur-xl transition-all duration-500 animate-pulse`} />
                 </div>
 
                 {/* Content */}
                 <div className="space-y-2 sm:space-y-3">
-                  <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground leading-tight group-hover:text-primary transition-colors duration-300">
+                  <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 leading-tight group-hover:text-[#65a30d] transition-colors duration-300">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground leading-relaxed text-xs sm:text-sm lg:text-base">
+                  <p className="text-gray-600 leading-relaxed text-xs sm:text-sm lg:text-base">
                     {feature.description}
                   </p>
                 </div>
 
                 {/* Bottom accent line */}
-                <div className="h-0.5 sm:h-1 w-12 sm:w-16 rounded-full bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 group-hover:from-amber-500 group-hover:via-amber-400 group-hover:to-amber-500 transition-all duration-500 group-hover:w-16 sm:group-hover:w-24 shadow-sm group-hover:shadow-amber-400/20" />
+                <div className="h-0.5 sm:h-1 w-12 sm:w-16 rounded-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 group-hover:from-[#A3E635] group-hover:via-[#84cc16] group-hover:to-[#A3E635] transition-all duration-500 group-hover:w-16 sm:group-hover:w-24 shadow-sm" />
               </div>
             </article>
           ))}

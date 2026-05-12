@@ -30,13 +30,13 @@ const services = [
 
 const SportsServices = () => {
     return (
-        <section className="py-20 sm:py-32 bg-charcoal text-white">
+        <section className="py-20 sm:py-32 bg-white text-gray-900">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-16 space-y-4">
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading text-white tracking-tight">
-                        Our <span className="text-gold">Facilities</span>
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold font-heading text-gray-900 tracking-tight">
+                        Our <span className="text-[#84cc16]">Facilities</span>
                     </h2>
-                    <p className="text-gray-400 max-w-2xl mx-auto text-lg font-light">
+                    <p className="text-gray-600 max-w-2xl mx-auto text-lg font-light">
                         World-class infrastructure designed for the modern athlete.
                     </p>
                 </div>
@@ -45,31 +45,31 @@ const SportsServices = () => {
                     {services.map((service, index) => (
                         <div
                             key={index}
-                            className="group relative bg-forest rounded-2xl p-8 sm:p-10 border border-white/5 hover:border-gold/50 transition-all duration-300 hover:-translate-y-2 overflow-hidden"
+                            className="group relative bg-[#F5F7FA] rounded-2xl p-8 sm:p-10 border border-gray-100 hover:border-[#84cc16]/50 transition-all duration-300 hover:-translate-y-2 overflow-hidden shadow-sm hover:shadow-md"
                         >
                             {/* Decorative Background Circle */}
-                            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-gold/10 transition-colors duration-500" />
+                            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white rounded-full blur-3xl group-hover:bg-[#A3E635]/20 transition-colors duration-500" />
 
                             <div className="relative z-10">
                                 <div className="flex justify-between items-start mb-8">
                                     <div>
-                                        <h3 className="text-3xl font-bold font-heading text-white mb-2">
+                                        <h3 className="text-3xl font-bold font-heading text-gray-900 mb-2">
                                             {service.sport}
                                         </h3>
-                                        <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-medium text-gold tracking-wider uppercase">
+                                        <span className="inline-block px-3 py-1 bg-white border border-gray-200 shadow-sm rounded-full text-xs font-medium text-[#65a30d] tracking-wider uppercase">
                                             {service.duration}
                                         </span>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm text-gray-400 mb-1">Starts from</p>
-                                        <p className="text-3xl font-bold text-gold font-mono">{service.price}</p>
+                                        <p className="text-sm text-gray-500 mb-1">Starts from</p>
+                                        <p className="text-3xl font-bold text-[#65a30d] font-mono">{service.price}</p>
                                     </div>
                                 </div>
 
                                 <ul className="space-y-4 mb-10">
                                     {service.features.map((feature, idx) => (
-                                        <li key={idx} className="flex items-center text-gray-300">
-                                            <div className="mr-3 p-1 rounded-full bg-gold/20 text-gold">
+                                        <li key={idx} className="flex items-center text-gray-700">
+                                            <div className="mr-3 p-1 rounded-full bg-[#A3E635]/20 text-[#65a30d]">
                                                 <Check className="w-3 h-3" />
                                             </div>
                                             {feature}
@@ -78,7 +78,7 @@ const SportsServices = () => {
                                 </ul>
 
                                 <Button
-                                    className="w-full bg-white text-forest hover:bg-gold hover:text-charcoal font-bold h-12 rounded-lg transition-all duration-300 group-hover:shadow-lg group-hover:shadow-gold/20"
+                                    className="w-full bg-white text-gray-900 hover:bg-[#A3E635] hover:text-[#1A2E05] font-bold h-12 border border-gray-200 rounded-lg transition-all duration-300 group-hover:shadow-lg group-hover:shadow-[#A3E635]/20"
                                 >
                                     Book {service.sport} Slot
                                     <ArrowRight className="ml-2 w-4 h-4" />

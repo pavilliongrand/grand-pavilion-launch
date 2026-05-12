@@ -6,67 +6,64 @@
 
 @layer base {
   :root {
-    /* Grand Pavilion Color Palette */
-    --color-primary: 158 42% 18%;
+    /* Grand Pavilion Color Palette - Light Theme */
+    --color-primary: 74 77% 55%;
+    /* #A3E635 Lime Green */
+    --color-secondary: 158 42% 18%;
     /* #1B4332 Forest Green */
-    --color-secondary: 43 74% 49%;
-    /* #DAA520 Warm Gold */
-    --color-background-dark: 0 0% 10%;
-    /* #1A1A1A Charcoal */
-    --color-background-light: 48 44% 94%;
-    /* #F5F5DC Cream */
-    --color-background-white: 0 0% 98%;
-    /* #FAFAFA Off-White */
+    --color-background-dark: 210 33% 97%;
+    /* #F5F7FA Light Gray */
+    --color-background-light: 0 0% 100%;
+    /* #FFFFFF White */
+    --color-background-white: 0 0% 100%;
+    /* #FFFFFF White */
 
     --color-text-main: 0 0% 10%;
     /* Charcoal for light bg */
-    --color-text-light: 0 0% 98%;
-    /* White for dark bg */
-    --color-text-muted: 200 18% 46%;
-    /* Slate Gray #455A64 */
+    --color-text-light: 0 0% 40%;
+    /* Muted text */
+    --color-text-muted: 0 0% 60%;
+    /* Gray */
 
     /* Functional Colors */
     --color-success: 123 46% 34%;
-    /* #2E7D32 */
     --color-warning: 30 100% 48%;
-    /* #F57C00 */
     --color-error: 14 89% 40%;
-    /* #BF360C */
 
-    /* Shadcn/UI Mappings (Dark Theme Default for this brand) */
-    --background: 0 0% 10%;
-    /* Charcoal */
-    --foreground: 48 44% 94%;
-    /* Cream text on dark */
+    /* Shadcn/UI Mappings (Light Theme) */
+    --background: 210 33% 97%;
+    /* #F5F7FA */
+    --foreground: 0 0% 10%;
+    /* Dark text */
 
-    --card: 158 42% 18%;
-    /* Forest Green Cards */
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 100%;
+    /* White Cards */
+    --card-foreground: 0 0% 10%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
 
-    --primary: 43 74% 49%;
-    /* Gold is Primary Action */
-    --primary-foreground: 0 0% 10%;
+    --primary: 74 77% 55%;
+    /* Lime Green is Primary Action */
+    --primary-foreground: 85 80% 10%;
 
-    --secondary: 158 42% 18%;
-    /* Forest Green Secondary */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    /* Light Gray Secondary */
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 43 74% 49%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 74 77% 55%;
+    --accent-foreground: 85 80% 10%;
 
     --destructive: 14 89% 40%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 43 74% 49%;
-    /* Gold Borders */
-    --input: 0 0% 20%;
-    --ring: 43 74% 49%;
+    --border: 0 0% 90%;
+    /* Light Borders */
+    --input: 0 0% 90%;
+    --ring: 74 77% 55%;
 
     --radius: 0.75rem;
   }

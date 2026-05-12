@@ -62,7 +62,7 @@ export default async function handler(
     }
 
     // Generate time slots
-    const slots = generateSlots(sport as 'cricket' | 'football', pricingData);
+    const slots = generateSlots(sport as 'cricket' | 'football', pricingData, date as string);
 
     // For FOOTBALL: Get availability for BOTH turfs
     if (sport === 'football') {
@@ -139,13 +139,36 @@ export default async function handler(
   }
 }
 
-function generateSlots(sport: 'cricket' | 'football', pricingData: any): TimeSlot[] {
+function generateSlots(sport: 'cricket' | 'football', pricingData: any, targetDateStr?: string): TimeSlot[] {
   const slots: TimeSlot[] = [];
   
   const hourlyPricing = pricingData.hourlyPricing;
   const workingHours = pricingData.workingHours || { start: 6, end: 24 };
 
-  for (let hour = workingHours.start; hour < workingHours.end; hour++) {
+  // Weekend Restriction Logic
+  let isWeekendAllowed = true;
+  if (targetDateStr) {
+    const targetDate = new Date(targetDateStr);
+    const dayOfWeek = targetDate.getDay();
+    
+    // Convert current time to IST
+    const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const todayDayOfWeek = istTime.getDay();
+    
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isFridayToday = todayDayOfWeek === 5;
+    isWeekendAllowed = !isWeekend || isFridayToday;
+  }
+
+  const formatAMPM = (h: number) => {
+    const ampm = h >= 12 && h < 24 ? 'PM' : 'AM';
+    let hour12 = h % 12;
+    hour12 = hour12 ? hour12 : 12;
+    return `${String(hour12).padStart(2, '0')}:00 ${ampm}`;
+  };
+
+  // Generate for all 24 hours
+  for (let hour = 0; hour < 24; hour++) {
     const endHour = hour + 1;
     const priceRule = hourlyPricing.find((p: any) => p.hour === hour);
     
@@ -155,10 +178,10 @@ function generateSlots(sport: 'cricket' | 'football', pricingData: any): TimeSlo
 
     slots.push({
       id: `${hour}-${endHour}`,
-      time: `${String(hour).padStart(2, '0')}:00 - ${String(endHour).padStart(2, '0')}:00`,
+      time: `${formatAMPM(hour)} - ${formatAMPM(endHour)}`,
       startHour: hour,
       endHour: endHour,
-      available: true,
+      available: isWeekendAllowed,
       price: price,
     });
   }

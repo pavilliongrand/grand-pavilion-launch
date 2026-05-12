@@ -6,8 +6,7 @@ import Admin from "./pages/Admin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import "./index.css";
 
-// Enable dark theme by default
-document.documentElement.classList.add('dark');
+// Default to light theme for the new UI makeover
 
 const rootElement = document.getElementById("root");
 

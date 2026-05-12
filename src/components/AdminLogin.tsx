@@ -43,35 +43,35 @@ const AdminLogin = ({ onAuthenticated }: AdminLoginProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F5F7FA] text-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6 sm:p-8">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6">
-            <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-amber-500" />
+        <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 sm:p-8">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#A3E635]/20 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6">
+            <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-[#65a30d]" />
           </div>
           
-          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2">Admin Login</h1>
-          <p className="text-gray-400 text-center mb-6 sm:mb-8 text-sm sm:text-base">Secure access required</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-gray-900">Admin Login</h1>
+          <p className="text-gray-500 text-center mb-6 sm:mb-8 text-sm sm:text-base">Secure access required</p>
 
           {error && (
-            <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+            <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm font-medium">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin}>
             <div className="mb-5 sm:mb-6">
-              <label className="block text-sm font-semibold mb-2 text-gray-300">
+              <label className="block text-sm font-semibold mb-2 text-gray-700">
                 Admin Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                <Lock className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter admin password"
-                  className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 bg-zinc-800 border-2 border-zinc-700 rounded-xl text-white text-sm sm:text-base focus:border-amber-500 focus:outline-none transition-all"
+                  className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 text-sm sm:text-base focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -79,7 +79,7 @@ const AdminLogin = ({ onAuthenticated }: AdminLoginProps) => {
             <button
               type="submit"
               disabled={loading || !password}
-              className="w-full px-6 py-3.5 sm:py-4 bg-amber-500 hover:bg-amber-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="w-full px-6 py-3.5 sm:py-4 bg-[#A3E635] hover:bg-[#84cc16] disabled:bg-gray-200 disabled:cursor-not-allowed text-[#1A2E05] disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
               Login

@@ -15,6 +15,12 @@ interface TimeSlot {
 }
 
 const formatTime12Hour = (timeStr: string) => {
+  if (!timeStr) return timeStr;
+  // If the time string is already in AM/PM format (like from the API), return it directly
+  if (timeStr.includes('AM') || timeStr.includes('PM')) {
+    return timeStr;
+  }
+
   const parts = timeStr.split(' - ');
   if (parts.length !== 2) return timeStr;
   
@@ -90,11 +96,13 @@ const Booking = () => {
         const response = await fetch(`/api/slots?date=${date}&sport=${sport}`);
         const data = await response.json();
         // Remove duplicate slots caused by turfs for UI rendering
-        const uniqueSlots = deduplicateSlots(data.slots || []);
+        let uniqueSlots = deduplicateSlots(data.slots || []);
+        uniqueSlots = enforceWeekendRule(uniqueSlots, date);
         setAvailableSlots(uniqueSlots);
       } catch (apiError) {
         console.log('API not available, using mock data');
-        const mockSlots = generateMockSlots(date, sport);
+        let mockSlots = generateMockSlots(date, sport);
+        mockSlots = enforceWeekendRule(mockSlots, date);
         setAvailableSlots(mockSlots);
       }
     } catch (err) {
@@ -102,6 +110,22 @@ const Booking = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const enforceWeekendRule = (slots: TimeSlot[], targetDateStr: string) => {
+    const targetDate = new Date(targetDateStr);
+    const dayOfWeek = targetDate.getDay();
+    const todayDayOfWeek = new Date().getDay();
+    
+    // Only allow booking weekend slots (Sat=6, Sun=0) if today is Friday (5)
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isFridayToday = todayDayOfWeek === 5;
+    const isWeekendAllowed = !isWeekend || isFridayToday;
+
+    if (!isWeekendAllowed) {
+      return slots.map(s => ({ ...s, available: false }));
+    }
+    return slots;
   };
 
   const deduplicateSlots = (slots: TimeSlot[]) => {
@@ -119,16 +143,23 @@ const Booking = () => {
 
   const generateMockSlots = (date: string, sport: string) => {
     const slots = [];
-    for (let hour = 6; hour < 23; hour++) {
+    for (let hour = 0; hour < 24; hour++) {
       const isPeak = hour >= 18 && hour <= 22;
       const cricketPrice = isPeak ? 1950 : 1500;
       const footballPrice = isPeak ? 1300 : 1000;
       
+      let nextHour = hour + 1;
+      let nextHourStr = String(nextHour).padStart(2, '0');
+      if (nextHour === 24) {
+        nextHour = 0;
+        nextHourStr = '00';
+      }
+
       slots.push({
         id: `${date}-${hour}`,
-        time: `${String(hour).padStart(2, '0')}:00 - ${String(hour + 1).padStart(2, '0')}:00`,
+        time: `${String(hour).padStart(2, '0')}:00 - ${nextHourStr}:00`,
         startHour: hour,
-        endHour: hour + 1,
+        endHour: nextHour,
         available: Math.random() > 0.3, // Randomly make some booked for realism
         price: sport === 'cricket' ? cricketPrice : footballPrice
       });
@@ -338,22 +369,21 @@ const Booking = () => {
               <h2 className="text-lg font-bold text-gray-900 mb-4">Select Sport</h2>
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { value: "cricket", label: "Cricket", duration: "Minimum 2 Hours" },
-                  { value: "football", label: "Football", duration: "Minimum 1 Hour" }
+                  { value: "cricket", label: "Cricket" },
+                  { value: "football", label: "Football" }
                 ].map(s => (
                   <button
                     key={s.value}
                     onClick={() => setSport(s.value as any)}
-                    className={`relative p-4 rounded-xl border-2 transition-all text-left ${
+                    className={`relative p-4 rounded-xl border-2 transition-all text-left flex items-center justify-between ${
                       sport === s.value
                         ? 'border-[#A3E635] bg-[#F7FEE7]'
                         : 'border-gray-100 bg-white hover:border-gray-200'
                     }`}
                   >
-                    <div className="font-bold text-gray-900 mb-1">{s.label}</div>
-                    <div className="text-xs text-gray-500">{s.duration}</div>
+                    <div className="font-bold text-gray-900">{s.label}</div>
                     {sport === s.value && (
-                      <div className="absolute top-3 right-3 w-5 h-5 bg-[#A3E635] rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 bg-[#A3E635] rounded-full flex items-center justify-center">
                         <Check className="w-3 h-3 text-[#1A2E05]" strokeWidth={3} />
                       </div>
                     )}
@@ -365,7 +395,18 @@ const Booking = () => {
             {/* Available Time Slots */}
             {date && (
               <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Pick a Slot</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">Pick a Slot</h2>
+                  {(() => {
+                    const d = new Date(date);
+                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                    const isFridayToday = new Date().getDay() === 5;
+                    if (isWeekend && !isFridayToday) {
+                      return <span className="text-xs font-semibold text-red-500 bg-red-50 px-2 py-1 rounded">Weekends only available on Fridays</span>;
+                    }
+                    return null;
+                  })()}
+                </div>
 
                 {loading ? (
                   <div className="flex justify-center py-12">
@@ -374,7 +415,7 @@ const Booking = () => {
                 ) : availableSlots.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">No slots available for this date.</div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {availableSlots.map(slot => {
                       const isSelected = selectedSlots.some(s => s.slotId === slot.id);
                       
@@ -383,7 +424,7 @@ const Booking = () => {
                           key={slot.id}
                           onClick={() => slot.available && toggleSlot(slot.id)}
                           disabled={!slot.available}
-                          className={`relative p-3 rounded-xl border transition-all active:scale-95 flex flex-col items-center justify-center ${
+                          className={`relative p-2 sm:p-3 rounded-xl border transition-all active:scale-95 flex flex-col items-center justify-center ${
                             isSelected
                               ? 'bg-[#A3E635] border-[#A3E635] text-[#1A2E05]'
                               : slot.available
@@ -391,12 +432,12 @@ const Booking = () => {
                               : 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
                           }`}
                         >
-                          <div className={`font-semibold text-sm ${!slot.available && 'opacity-60'}`}>
+                          <div className={`font-semibold text-xs sm:text-sm whitespace-nowrap ${!slot.available && 'opacity-60'}`}>
                             {formatTime12Hour(slot.time)}
                           </div>
                           
                           {!slot.available && (
-                            <div className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-wider">Booked</div>
+                            <div className="text-[10px] text-red-500 font-bold mt-0.5 sm:mt-1 uppercase tracking-wider">Booked</div>
                           )}
                         </button>
                       );

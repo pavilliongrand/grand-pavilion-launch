@@ -32,10 +32,10 @@ export const About = () => {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section id="about" className="relative py-12 sm:py-16 lg:py-20 bg-black overflow-hidden">
+    <section id="about" className="relative py-12 sm:py-16 lg:py-20 bg-[#F5F7FA] overflow-hidden">
       {/* Ambient glow effects */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-[120px]" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#84cc16]/5 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#A3E635]/5 rounded-full blur-[120px]" />
       <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
@@ -45,10 +45,10 @@ export const About = () => {
         >
           {/* Title */}
           <div className="text-center mb-10 sm:mb-12 lg:mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
               Palakkad's Premier Sports Facility
             </h2>
-            <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto">
               State-of-the-art turfs designed for champions, built for the community
             </p>
           </div>
@@ -60,25 +60,25 @@ export const About = () => {
               return (
                 <div
                   key={index}
-                  className="group relative bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 rounded-xl p-5 sm:p-6 lg:p-8 hover:border-amber-500/50 transition-all duration-300 hover:scale-105"
+                  className="group relative bg-white border border-gray-100 shadow-sm rounded-xl p-5 sm:p-6 lg:p-8 hover:border-[#84cc16] hover:shadow-md transition-all duration-300 hover:scale-105"
                   style={{
                     transitionDelay: `${index * 100}ms`
                   }}
                 >
                   {/* Icon */}
                   <div className="mb-3 sm:mb-4">
-                    <div className="inline-flex p-2.5 sm:p-3 rounded-lg bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+                    <div className="inline-flex p-2.5 sm:p-3 rounded-lg bg-[#A3E635]/20 group-hover:bg-[#A3E635]/30 transition-colors">
+                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-[#65a30d]" />
                     </div>
                   </div>
 
                   {/* Value */}
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-2">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
                     {stat.value}
                   </div>
 
                   {/* Label */}
-                  <div className="text-sm sm:text-base font-semibold text-gray-300 mb-1">
+                  <div className="text-sm sm:text-base font-semibold text-gray-700 mb-1">
                     {stat.label}
                   </div>
 
@@ -88,7 +88,7 @@ export const About = () => {
                   </div>
 
                   {/* Glow Effect on Hover */}
-                  <div className="absolute inset-0 rounded-xl bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  <div className="absolute inset-0 rounded-xl bg-[#84cc16]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 </div>
               );
             })}
