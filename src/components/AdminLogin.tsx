@@ -16,7 +16,6 @@ const AdminLogin = ({ onAuthenticated }: AdminLoginProps) => {
     setError(null);
     
     try {
-      // Server-side password verification (password never exposed in client JS)
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -25,12 +24,12 @@ const AdminLogin = ({ onAuthenticated }: AdminLoginProps) => {
 
       const data = await response.json();
 
-      if (data.success) {
-        // Store session in localStorage (including password for API auth)
+      if (data.success && data.token) {
+        // Store the signed JWT — never store the raw password
         localStorage.setItem('admin_session', JSON.stringify({
           authenticated: true,
           timestamp: new Date().getTime(),
-          key: password
+          token: data.token,
         }));
         onAuthenticated();
       } else {

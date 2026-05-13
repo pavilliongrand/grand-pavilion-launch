@@ -1,23 +1,20 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAllBookings, deleteCalendarBooking } from '../lib/calendarService.js';
+import { getAllBookings, deleteCalendarBooking, updateBookingStatus } from '../lib/calendarService.js';
+import { extractAndVerifyAdmin } from '../lib/verifyAdminToken.js';
+import { applyCors } from '../lib/cors.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Admin-Key');
+  applyCors(res, 'GET,DELETE,PATCH,OPTIONS');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
-  // Admin authentication
-  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-  const adminKey = req.headers['x-admin-key'] as string;
-  if (adminKey !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  // Admin authentication via JWT
+  try {
+    extractAndVerifyAdmin(req.headers.authorization);
+  } catch (authError: any) {
+    return res.status(401).json({ error: authError.message || 'Unauthorized' });
   }
 
   try {
@@ -32,38 +29,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         endDate.toISOString().split('T')[0]
       );
 
-      // Transform events to booking format
-      const bookings = events.map((event: any) => ({
-        id: event.id,
-        name: event.extendedProperties?.private?.name || 'Unknown',
-        sport: event.extendedProperties?.private?.sport || 'unknown',
-        date: event.start?.dateTime?.split('T')[0] || '',
-        slots: [event.extendedProperties?.private?.slotId || ''],
-        slotTimes: [`${new Date(event.start?.dateTime).getHours()}:00 - ${new Date(event.end?.dateTime).getHours()}:00`],
-        phone: event.extendedProperties?.private?.phone || '',
-        amount: parseInt(event.extendedProperties?.private?.amount || '0'),
-        status: 'confirmed',
-        paymentMethod: event.extendedProperties?.private?.paymentMethod || 'cash',
-        createdAt: event.extendedProperties?.private?.bookingDate || event.created
-      }));
+      // Transform events to booking format (exclude blocked/admin events)
+      const bookings = events
+        .filter((event: any) => event.extendedProperties?.private?.blocked !== 'true')
+        .map((event: any) => {
+          // Use IST-safe hour extraction
+          const startDt = event.start?.dateTime ? new Date(event.start.dateTime) : null;
+          const endDt = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+          const startHourIST = startDt ? new Date(startDt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getHours() : 0;
+          const endHourIST = endDt ? new Date(endDt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getHours() : 0;
+
+          return {
+            id: event.id,
+            name: event.extendedProperties?.private?.name || 'Unknown',
+            sport: event.extendedProperties?.private?.sport || 'unknown',
+            date: event.start?.dateTime?.split('T')[0] || '',
+            slots: [event.extendedProperties?.private?.slotId || ''],
+            slotTimes: [`${startHourIST}:00 - ${endHourIST}:00`],
+            phone: event.extendedProperties?.private?.phone || '',
+            amount: parseInt(event.extendedProperties?.private?.amount || '0'),
+            status: event.extendedProperties?.private?.status || 'pending',
+            paymentMethod: event.extendedProperties?.private?.paymentMethod || 'cash',
+            createdAt: event.extendedProperties?.private?.bookingDate || event.created,
+          };
+        });
 
       return res.status(200).json({ success: true, bookings });
     }
 
     if (req.method === 'DELETE') {
       const { id } = req.query;
-      
+
       if (!id) {
         return res.status(400).json({ error: 'Booking ID required' });
       }
 
       await deleteCalendarBooking(id as string);
-      
+
       return res.status(200).json({ success: true, message: 'Booking cancelled' });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method === 'PATCH') {
+      const { id, status } = req.body;
 
+      if (!id || !status) {
+        return res.status(400).json({ error: 'Booking ID and status required' });
+      }
+
+      await updateBookingStatus(id as string, status as string);
+
+      return res.status(200).json({ success: true, message: 'Booking status updated' });
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' });
   } catch (error: any) {
     console.error('Admin Bookings API Error:', error);
     return res.status(500).json({ error: error.message || 'Internal server error' });

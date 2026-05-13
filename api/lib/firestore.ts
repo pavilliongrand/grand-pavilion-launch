@@ -21,8 +21,9 @@ const DEFAULT_PRICING = {
   sportAvailability: { cricket: true, football: true },
   hourlyPricing: Array.from({ length: 24 }, (_, i) => ({
     hour: i,
-    cricketPrice: i >= 18 && i < 22 ? 1950 : 1500,
-    footballPrice: i >= 18 && i < 22 ? 1300 : 1000,
+    cricketPrice: i >= 18 && i < 22 ? 1950 : 1600,
+    football7sPrice: i >= 18 && i < 22 ? 1950 : 1600,
+    football11sPrice: i >= 18 && i < 22 ? 2600 : 2200,
   })),
   lastUpdated: new Date().toISOString(),
 };

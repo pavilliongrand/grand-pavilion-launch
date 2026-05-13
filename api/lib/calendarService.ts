@@ -20,9 +20,8 @@ function getCalendarClient() {
 
 /**
  * Get occupied slot IDs for a specific date and sport
- * For football, can specify turf number (1 or 2)
  */
-export async function getOccupiedSlotsFromCalendar(date: string, sport: string, footballTurf?: number): Promise<string[]> {
+export async function getOccupiedSlotsFromCalendar(date: string, sport: string): Promise<string[]> {
   try {
     const calendar = getCalendarClient();
     
@@ -47,28 +46,28 @@ export async function getOccupiedSlotsFromCalendar(date: string, sport: string, 
       const eventSport = event.extendedProperties?.private?.sport;
       const slotId = event.extendedProperties?.private?.slotId;
       const isBlocked = event.extendedProperties?.private?.blocked === 'true';
-      const eventTurf = event.extendedProperties?.private?.footballTurf ? parseInt(event.extendedProperties.private.footballTurf) : undefined;
       
-      // For football with turf specified, match exact turf number
-      // For cricket or football without turf, match sport only
-      const sportMatches = eventSport === sport && (
-        sport !== 'football' || 
-        !footballTurf || 
-        eventTurf === footballTurf
-      );
+      // Normalize sports to handle 7s/11s as just "football" for admin blocking logic
+      const normalizedRequestedSport = sport.startsWith('football') ? 'football' : sport;
+      const normalizedEventSport = eventSport?.startsWith('football') ? 'football' : eventSport;
       
-      // Blocked slots should only block the same sport, not all sports
-      const blockedForThisSport = isBlocked && eventSport === sport;
-      
-      if ((sportMatches || blockedForThisSport) && slotId) {
-        occupiedSlotIds.push(slotId);
+      if (slotId) {
+        if (!isBlocked) {
+          // Real booking: blocks the ground for ALL sports
+          occupiedSlotIds.push(slotId);
+        } else {
+          // Admin block: only blocks the specified sport
+          if (normalizedEventSport === normalizedRequestedSport) {
+            occupiedSlotIds.push(slotId);
+          }
+        }
       }
     });
 
     return occupiedSlotIds;
   } catch (error) {
     console.error('Error fetching occupied slots from calendar:', error);
-    return [];
+    throw new Error('Failed to check slot availability. Please try again.');
   }
 }
 
@@ -84,7 +83,6 @@ export async function createCalendarBooking(data: {
   phone: string;
   amount: number;
   paymentMethod: string;
-  footballTurf?: number;
 }): Promise<string> {
   try {
     const calendar = getCalendarClient();
@@ -103,15 +101,14 @@ export async function createCalendarBooking(data: {
       endDateTime.setDate(endDateTime.getDate() + 1);
     }
 
-    const turfInfo = data.sport === 'football' && data.footballTurf ? ` - Turf ${data.footballTurf}` : '';
-    const summary = `${data.sport.toUpperCase()}${turfInfo} - ${data.name}`;
+    const summary = `${data.sport.toUpperCase()} - ${data.name}`;
 
     const event = {
       summary,
       description: `
 👤 Name: ${data.name}
 📱 Phone: ${data.phone}
-⚽ Sport: ${data.sport}${turfInfo}
+⚽ Sport: ${data.sport}
 💰 Amount: ₹${data.amount}
 💳 Payment: ${data.paymentMethod}
 ⏰ Slot: ${data.slotId}
@@ -134,8 +131,7 @@ Booked via Grand Pavilion Website
           amount: data.amount.toString(),
           paymentMethod: data.paymentMethod,
           slotId: data.slotId,
-          bookingDate: new Date().toISOString(),
-          ...(data.footballTurf && { footballTurf: data.footballTurf.toString() })
+          bookingDate: new Date().toISOString()
         },
       },
       colorId: data.sport === 'cricket' ? '9' : '11', // Blue for cricket, Red for football
@@ -189,5 +185,37 @@ export async function getAllBookings(startDate: string, endDate: string) {
   } catch (error) {
     console.error('Error fetching bookings:', error);
     return [];
+  }
+}
+
+/**
+ * Update a booking status
+ */
+export async function updateBookingStatus(eventId: string, status: string): Promise<void> {
+  try {
+    const calendar = getCalendarClient();
+    
+    const event = await calendar.events.get({
+      calendarId: CALENDAR_ID,
+      eventId: eventId,
+    });
+
+    const currentProps = event.data.extendedProperties?.private || {};
+
+    await calendar.events.patch({
+      calendarId: CALENDAR_ID,
+      eventId: eventId,
+      requestBody: {
+        extendedProperties: {
+          private: {
+            ...currentProps,
+            status: status
+          }
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error updating calendar booking status:', error);
+    throw error;
   }
 }

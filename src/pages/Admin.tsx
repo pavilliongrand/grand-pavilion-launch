@@ -54,7 +54,8 @@ interface BlockedSlot {
 interface PricingRule {
   hour: number;
   cricketPrice: number;
-  footballPrice: number;
+  football7sPrice: number;
+  football11sPrice: number;
 }
 
 interface WorkingHours {
@@ -79,36 +80,33 @@ const Admin = () => {
   const [saving, setSaving] = useState(false);
   
   // Slot Management
-  const [blockSport, setBlockSport] = useState<"cricket" | "football">("cricket");
   const [blockDate, setBlockDate] = useState("");
-  const [blockReason, setBlockReason] = useState("");
-  const [selectedBlockSlots, setSelectedBlockSlots] = useState<string[]>([]);
-  const [availableSlotsForBlock, setAvailableSlotsForBlock] = useState<TimeSlot[]>([]);
   
   // Hourly pricing (24 hours)
   const [pricingRules, setPricingRules] = useState<PricingRule[]>(
     Array.from({ length: 24 }, (_, i) => ({
       hour: i,
-      cricketPrice: i >= 18 && i < 22 ? 1950 : 1500,
-      footballPrice: i >= 18 && i < 22 ? 1300 : 1000
+      cricketPrice: i >= 18 && i < 22 ? 1950 : 1600,
+      football7sPrice: i >= 18 && i < 22 ? 1950 : 1600,
+      football11sPrice: i >= 18 && i < 22 ? 2600 : 2200
     }))
   );
   const [workingHours, setWorkingHours] = useState<WorkingHours>({ start: 6, end: 24 });
   const [sportAvailability, setSportAvailability] = useState({ cricket: true, football: true });
 
-  // Get admin key from session for API authentication
-  const getAdminKey = () => {
+  // Get signed admin token from session for API authentication
+  const getAdminToken = () => {
     const session = localStorage.getItem('admin_session');
     if (session) {
       const parsed = JSON.parse(session);
-      return parsed.key || '';
+      return parsed.token || '';
     }
     return '';
   };
 
   const adminHeaders = () => ({
     'Content-Type': 'application/json',
-    'X-Admin-Key': getAdminKey()
+    'Authorization': `Bearer ${getAdminToken()}`
   });
 
   useEffect(() => {
@@ -124,21 +122,40 @@ const Admin = () => {
   }, [activeTab, isAuthenticated]);
 
   useEffect(() => {
-    if (blockDate && blockSport) {
-      fetchSlotsForBlocking();
+    if (blockDate) {
+      fetchBlockedSlots();
     }
-  }, [blockDate, blockSport]);
+  }, [blockDate]);
 
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/bookings', { headers: adminHeaders() });
+      const response = await fetch(`/api/admin/bookings?t=${Date.now()}`, { headers: adminHeaders() });
       const data = await response.json();
       setBookings(data.bookings || []);
     } catch (err) {
       console.error('Failed to fetch bookings:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleBookingStatus = async (bookingId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'confirmed' ? 'pending' : 'confirmed';
+    try {
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
+      const res = await fetch(`/api/admin/bookings`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...adminHeaders()
+        },
+        body: JSON.stringify({ id: bookingId, status: newStatus })
+      });
+      if (!res.ok) throw new Error('Failed to update');
+    } catch (err) {
+      alert('Failed to update status');
+      fetchBookings();
     }
   };
 
@@ -176,16 +193,6 @@ const Admin = () => {
     }
   };
 
-  const fetchSlotsForBlocking = async () => {
-    try {
-      const response = await fetch(`/api/slots?date=${blockDate}&sport=${blockSport}`);
-      const data = await response.json();
-      setAvailableSlotsForBlock(data.slots || []);
-    } catch (err) {
-      console.error('Failed to fetch slots:', err);
-    }
-  };
-
   const savePricing = async () => {
     setSaving(true);
     try {
@@ -208,53 +215,49 @@ const Admin = () => {
     }
   };
 
-  const blockSlots = async () => {
-    if (selectedBlockSlots.length === 0) {
-      alert('Please select at least one slot to block');
-      return;
-    }
-
+  const toggleSlotBlock = async (hour: number, sport: 'cricket' | 'football', currentlyBlocked: boolean) => {
+    const slotId = `${hour}-${hour+1}`;
     setSaving(true);
     try {
-      const response = await fetch('/api/admin/block-slots', {
-        method: 'POST',
-        headers: adminHeaders(),
-        body: JSON.stringify({
-          sport: blockSport,
-          date: blockDate,
-          slotIds: selectedBlockSlots,
-          reason: blockReason || 'Manually blocked by admin'
-        })
-      });
-      
-      if (response.ok) {
-        alert('Slots blocked successfully!');
-        setSelectedBlockSlots([]);
-        setBlockReason('');
-        fetchBlockedSlots();
-        fetchSlotsForBlocking();
+      if (currentlyBlocked) {
+        const blockEvent = blockedSlots.find(b => b.date === blockDate && b.sport === sport && b.slotIds.includes(slotId));
+        if (blockEvent) {
+          setBlockedSlots(prev => prev.filter(b => b.id !== blockEvent.id));
+          await fetch('/api/admin/unblock-slots', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+            body: JSON.stringify({ eventId: blockEvent.id })
+          });
+        }
+      } else {
+        await fetch('/api/admin/block-slots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+          body: JSON.stringify({ sport, date: blockDate, slotIds: [slotId], reason: 'Admin blocked' })
+        });
+        await fetchBlockedSlots();
       }
     } catch (err) {
-      alert('Failed to block slots');
+      alert('Failed to update slot');
+      fetchBlockedSlots();
     } finally {
       setSaving(false);
     }
   };
 
-  const unblockSlots = async (blockId: string) => {
+  const unblockSlots = async (eventId: string) => {
     if (!confirm('Are you sure you want to unblock these slots?')) return;
 
     try {
       const response = await fetch('/api/admin/unblock-slots', {
         method: 'DELETE',
-        headers: adminHeaders(),
-        body: JSON.stringify({ eventId: blockId })
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ eventId })
       });
       
       if (response.ok) {
         alert('Slot unblocked successfully!');
         fetchBlockedSlots();
-        if (blockDate) fetchSlotsForBlocking();
       } else {
         alert('Failed to unblock slot');
       }
@@ -267,7 +270,7 @@ const Admin = () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     
     try {
-      await fetch(`/api/admin/bookings/${bookingId}`, {
+      await fetch(`/api/admin/bookings?id=${bookingId}`, {
         method: 'DELETE',
         headers: adminHeaders()
       });
@@ -277,11 +280,9 @@ const Admin = () => {
     }
   };
 
-  const updateHourlyPrice = (hour: number, sport: 'cricket' | 'football', price: number) => {
+  const updateHourlyPrice = (hour: number, type: 'cricket' | 'football7s' | 'football11s', value: number) => {
     setPricingRules(prev => prev.map(rule => 
-      rule.hour === hour 
-        ? { ...rule, [sport === 'cricket' ? 'cricketPrice' : 'footballPrice']: price }
-        : rule
+      rule.hour === hour ? { ...rule, [`${type}Price`]: value } : rule
     ));
   };
 
@@ -449,13 +450,24 @@ const Admin = () => {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="font-semibold text-sm sm:text-base text-gray-900">{booking.name || 'N/A'}</div>
-                        <div className="text-xs text-gray-500">{booking.phone}</div>
+                        <a href={`tel:${booking.phone}`} className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1">
+                          {booking.phone}
+                        </a>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none bg-white border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                          <input 
+                            type="checkbox" 
+                            checked={booking.status === 'confirmed'} 
+                            onChange={() => toggleBookingStatus(booking.id, booking.status)}
+                            className="w-3.5 h-3.5 rounded text-[#84cc16] focus:ring-[#84cc16] cursor-pointer"
+                          />
+                          <span className="text-gray-700 font-medium">Confirmed</span>
+                        </label>
                         <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${
                           booking.status === 'confirmed'
                             ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
+                            : 'bg-yellow-100 text-yellow-700'
                         }`}>
                           {booking.status}
                         </span>
@@ -630,8 +642,9 @@ const Admin = () => {
                   <thead>
                     <tr className="border-b-2 border-gray-200">
                       <th className="pb-4 text-left font-bold text-gray-500 uppercase text-xs tracking-wider">Time Slot</th>
-                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">Cricket Price</th>
-                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">Football Price</th>
+                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">Cricket (₹)</th>
+                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">7-a-side (₹)</th>
+                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">11-a-side (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -656,28 +669,42 @@ const Admin = () => {
                           </td>
                           <td className="py-4">
                             <div className="flex justify-center">
-                              <div className="relative w-32">
+                              <div className="relative w-28">
                                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                   type="number"
                                   value={rule.cricketPrice}
                                   onChange={(e) => updateHourlyPrice(rule.hour, 'cricket', Number(e.target.value))}
                                   disabled={!isWithinWorkingHours}
-                                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
+                                  className="w-full pl-9 pr-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                                 />
                               </div>
                             </div>
                           </td>
                           <td className="py-4">
                             <div className="flex justify-center">
-                              <div className="relative w-32">
+                              <div className="relative w-28">
                                 <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                   type="number"
-                                  value={rule.footballPrice}
-                                  onChange={(e) => updateHourlyPrice(rule.hour, 'football', Number(e.target.value))}
+                                  value={rule.football7sPrice || rule.footballPrice || 1600}
+                                  onChange={(e) => updateHourlyPrice(rule.hour, 'football7s', Number(e.target.value))}
                                   disabled={!isWithinWorkingHours}
-                                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
+                                  className="w-full pl-9 pr-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex justify-center">
+                              <div className="relative w-28">
+                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                  type="number"
+                                  value={rule.football11sPrice || 2200}
+                                  onChange={(e) => updateHourlyPrice(rule.hour, 'football11s', Number(e.target.value))}
+                                  disabled={!isWithinWorkingHours}
+                                  className="w-full pl-9 pr-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                                 />
                               </div>
                             </div>
@@ -702,97 +729,64 @@ const Admin = () => {
                 Block Slots
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">Sport</label>
-                  <select
-                    value={blockSport}
-                    onChange={(e) => setBlockSport(e.target.value as any)}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
-                  >
-                    <option value="cricket">Cricket</option>
-                    <option value="football">Football</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">Date</label>
-                  <input
-                    type="date"
-                    value={blockDate}
-                    min={getTodayDate()}
-                    onChange={(e) => setBlockDate(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
-                  />
-                </div>
+              <div className="mb-6">
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Select Date</label>
+                <input
+                  type="date"
+                  value={blockDate}
+                  min={getTodayDate()}
+                  onChange={(e) => setBlockDate(e.target.value)}
+                  className="w-full md:w-1/2 px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                />
               </div>
 
               {blockDate && (
-                <>
-                  <div className="mb-4">
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">Reason (Optional)</label>
-                    <input
-                      type="text"
-                      value={blockReason}
-                      onChange={(e) => setBlockReason(e.target.value)}
-                      placeholder="e.g., Maintenance, Private event"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
-                    />
+                <div className="space-y-2">
+                  <div className="flex text-sm font-bold text-gray-500 px-3 mb-2">
+                    <div className="w-1/3">Time Slot</div>
+                    <div className="w-1/3 text-center">Cricket</div>
+                    <div className="w-1/3 text-center">Football</div>
                   </div>
+                  {Array.from({ length: 24 }, (_, i) => i).map(hour => {
+                    const slotId = `${hour}-${hour+1}`;
+                    const format = (h: number) => {
+                      const ampm = h >= 12 && h < 24 ? 'PM' : 'AM';
+                      let h12 = h % 12;
+                      h12 = h12 ? h12 : 12;
+                      return `${String(h12).padStart(2, '0')}:00 ${ampm}`;
+                    };
+                    const time = `${format(hour)} - ${format(hour+1)}`;
+                    
+                    const isCricketBlocked = blockedSlots.some(b => b.date === blockDate && b.sport === 'cricket' && b.slotIds.includes(slotId));
+                    const isFootballBlocked = blockedSlots.some(b => b.date === blockDate && b.sport === 'football' && b.slotIds.includes(slotId));
 
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-900">Select Slots to Block</h3>
-                    <div className="flex flex-col gap-3">
-                      {availableSlotsForBlock.map(slot => {
-                        const isSelected = selectedBlockSlots.includes(slot.id);
-                        return (
-                          <div key={slot.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white">
-                            <div className="font-semibold text-sm text-gray-900">{slot.time}</div>
-                            <div className="flex items-center gap-3">
-                              {!slot.available && (
-                                <span className="text-xs text-gray-500 font-medium">Blocked</span>
-                              )}
-                              <button
-                                onClick={() => {
-                                  if (slot.available) {
-                                    setSelectedBlockSlots(prev =>
-                                      prev.includes(slot.id)
-                                        ? prev.filter(id => id !== slot.id)
-                                        : [...prev, slot.id]
-                                    );
-                                  }
-                                }}
-                                disabled={!slot.available}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                  !slot.available 
-                                    ? 'bg-gray-300 cursor-not-allowed' 
-                                    : isSelected 
-                                      ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d]' 
-                                      : 'bg-zinc-200'
-                                }`}
-                              >
-                                <span
-                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                    isSelected ? 'translate-x-6' : 'translate-x-1'
-                                  }`}
-                                />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                    return (
+                      <div key={hour} className={`flex items-center p-3 rounded-xl border transition-colors ${saving ? 'opacity-50 pointer-events-none' : ''} ${isCricketBlocked && isFootballBlocked ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-200'}`}>
+                        <div className="w-1/3 font-semibold text-xs sm:text-sm text-gray-900">{time}</div>
+                        
+                        <div className="w-1/3 flex justify-center">
+                          <button 
+                            onClick={() => toggleSlotBlock(hour, 'cricket', isCricketBlocked)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full text-lg hover:scale-110 transition-transform active:scale-95"
+                            title={isCricketBlocked ? "Unblock Cricket" : "Block Cricket"}
+                          >
+                            {isCricketBlocked ? '❌' : '✅'}
+                          </button>
+                        </div>
 
-                  <button
-                    onClick={blockSlots}
-                    disabled={saving || selectedBlockSlots.length === 0}
-                    className="w-full px-6 py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-200 disabled:cursor-not-allowed text-white disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
-                  >
-                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Ban className="w-5 h-5" />}
-                    Block {selectedBlockSlots.length} Slot{selectedBlockSlots.length !== 1 ? 's' : ''}
-                  </button>
-                </>
+                        <div className="w-1/3 flex justify-center">
+                          <button 
+                            onClick={() => toggleSlotBlock(hour, 'football', isFootballBlocked)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full text-lg hover:scale-110 transition-transform active:scale-95"
+                            title={isFootballBlocked ? "Unblock Football" : "Block Football"}
+                          >
+                            {isFootballBlocked ? '❌' : '✅'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
 
@@ -909,10 +903,10 @@ const Admin = () => {
                 <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
                   <div className="text-sm text-gray-500 mb-2">Football Bookings</div>
                   <div className="text-3xl font-bold text-gray-900">
-                    {bookings.filter(b => b.sport === 'football').length}
+                    {bookings.filter(b => b.sport.startsWith('football')).length}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    ₹{bookings.filter(b => b.sport === 'football').reduce((sum, b) => sum + b.amount, 0).toLocaleString()} revenue
+                    ₹{bookings.filter(b => b.sport.startsWith('football')).reduce((sum, b) => sum + b.amount, 0).toLocaleString()} revenue
                   </div>
                 </div>
               </div>

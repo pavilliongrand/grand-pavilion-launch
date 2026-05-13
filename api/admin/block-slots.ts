@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { google } from 'googleapis';
+import { extractAndVerifyAdmin } from '../lib/verifyAdminToken.js';
+import { applyCors } from '../lib/cors.js';
 
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
 const PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n');
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 interface BlockSlotRequest {
   sport: 'cricket' | 'football';
@@ -14,14 +15,21 @@ interface BlockSlotRequest {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  applyCors(res, 'POST,OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Admin authentication
-  const adminKey = req.headers['x-admin-key'] as string;
-  if (adminKey !== ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  // Admin authentication via JWT
+  try {
+    extractAndVerifyAdmin(req.headers.authorization);
+  } catch (authError: any) {
+    return res.status(401).json({ error: authError.message || 'Unauthorized' });
   }
 
   try {
@@ -34,17 +42,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const auth = new google.auth.JWT({
       email: SERVICE_ACCOUNT_EMAIL,
       key: PRIVATE_KEY,
-      scopes: ['https://www.googleapis.com/auth/calendar']
+      scopes: ['https://www.googleapis.com/auth/calendar'],
     });
 
     const calendar = google.calendar({ version: 'v3', auth });
 
-    // Create blocked event for each slot
     const blockedEvents = [];
     for (const slotId of slotIds) {
       const [startHour] = slotId.split('-').map(Number);
       const endHour = startHour + 1;
-      // Construct IST times directly to avoid UTC issues on Vercel
       const startTime = new Date(`${date}T${String(startHour).padStart(2, '0')}:00:00+05:30`);
       const endTime = new Date(`${date}T${String(endHour === 24 ? 0 : endHour).padStart(2, '0')}:00:00+05:30`);
       if (endHour === 24) {
@@ -54,43 +60,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const event = {
         summary: `BLOCKED - ${sport.toUpperCase()}`,
         description: `🚫 Reason: ${reason}\n🏏 Sport: ${sport}\n⏰ Time: ${startHour}:00 - ${startHour + 1}:00`,
-        start: {
-          dateTime: startTime.toISOString(),
-          timeZone: 'Asia/Kolkata'
-        },
-        end: {
-          dateTime: endTime.toISOString(),
-          timeZone: 'Asia/Kolkata'
-        },
+        start: { dateTime: startTime.toISOString(), timeZone: 'Asia/Kolkata' },
+        end: { dateTime: endTime.toISOString(), timeZone: 'Asia/Kolkata' },
         extendedProperties: {
-          private: {
-            blocked: 'true',
-            sport,
-            slotId,
-            reason
-          }
+          private: { blocked: 'true', sport, slotId, reason },
         },
-        colorId: '11' // Red color for blocked slots
+        colorId: '11',
       };
 
       const response = await calendar.events.insert({
         calendarId: CALENDAR_ID,
-        requestBody: event
+        requestBody: event,
       });
 
       blockedEvents.push(response.data);
     }
 
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       message: `Blocked ${blockedEvents.length} slot(s)`,
-      blockedEvents 
+      blockedEvents,
     });
   } catch (error: any) {
     console.error('Block slots error:', error);
-    return res.status(500).json({ 
-      error: 'Failed to block slots',
-      details: error.message 
-    });
+    return res.status(500).json({ error: 'Failed to block slots', details: error.message });
   }
 }

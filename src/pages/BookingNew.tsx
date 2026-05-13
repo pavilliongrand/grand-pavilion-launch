@@ -11,7 +11,6 @@ interface TimeSlot {
   endHour: number;
   available: boolean;
   price: number;
-  turf?: number; 
 }
 
 const formatTime12Hour = (timeStr: string) => {
@@ -42,13 +41,14 @@ const Booking = () => {
   const [error, setError] = useState<string | null>(null);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   
-  const [sport, setSport] = useState<"cricket" | "football">("cricket");
+  const [sport, setSport] = useState<"cricket" | "football-7s" | "football-11s">("cricket");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSlots, setSelectedSlots] = useState<Array<{slotId: string}>>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [showAllSlots, setShowAllSlots] = useState(false);
   
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -77,10 +77,8 @@ const Booking = () => {
       try {
         const response = await fetch(`/api/slots?date=${date}&sport=${sport}`);
         const data = await response.json();
-        // Remove duplicate slots caused by turfs for UI rendering
-        let uniqueSlots = deduplicateSlots(data.slots || []);
-        uniqueSlots = enforceWeekendRule(uniqueSlots, date);
-        setAvailableSlots(uniqueSlots);
+        const availableSlotsWithWeekendRule = enforceWeekendRule(data.slots || [], date);
+        setAvailableSlots(availableSlotsWithWeekendRule);
       } catch (apiError) {
         console.log('API not available, using mock data');
         let mockSlots = generateMockSlots(date, sport);
@@ -108,19 +106,6 @@ const Booking = () => {
       return slots.map(s => ({ ...s, available: false }));
     }
     return slots;
-  };
-
-  const deduplicateSlots = (slots: TimeSlot[]) => {
-    const seen = new Set();
-    return slots.filter(slot => {
-      // Strip turf identifier to deduplicate
-      const baseId = slot.id.replace(/-turf\d+$/, '');
-      if (seen.has(baseId)) return false;
-      seen.add(baseId);
-      // Ensure the id in our availableSlots doesn't have -turfX
-      slot.id = baseId; 
-      return true;
-    });
   };
 
   const generateMockSlots = (date: string, sport: string) => {
@@ -186,7 +171,11 @@ const Booking = () => {
     } catch (err: any) {
       console.error('Firebase OTP error:', err);
       if ((window as any).recaptchaVerifier) {
-        try { (window as any).recaptchaVerifier.clear(); } catch (_) {}
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch {
+          // Ignore cleanup failures; a fresh verifier is created below.
+        }
         // Clean up the DOM to avoid stacking invisible iframes
         const container = document.getElementById('recaptcha-container');
         if (container) container.innerHTML = '';
@@ -206,8 +195,9 @@ const Booking = () => {
     setLoading(true);
     setError(null);
     try {
-      await confirmationResult.confirm(otp);
-      await createBooking();
+      const credential = await confirmationResult.confirm(otp);
+      const idToken = await credential.user.getIdToken();
+      await createBooking(idToken);
     } catch (err: any) {
       console.error('OTP verification error:', err);
       setError('Invalid OTP. Please try again.');
@@ -216,24 +206,20 @@ const Booking = () => {
     }
   };
 
-  const createBooking = async () => {
+  const createBooking = async (idToken: string) => {
     try {
-      // Create backend-compatible slots (with default turf 1 for football if needed)
-      const backendSlots = selectedSlots.map(s => {
-        const isFootball = sport === 'football';
-        return isFootball ? { ...s, turf: 1 } : s;
-      });
-
       const response = await fetch('/api/book', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
         body: JSON.stringify({
           name,
           sport,
           date,
-          slots: backendSlots,
+          slots: selectedSlots,
           phone,
-          amount: calculateTotal(),
           paymentMethod: 'cash'
         })
       });
@@ -252,7 +238,20 @@ const Booking = () => {
   const getNext7Days = () => {
     const dates = [];
     const today = new Date();
-    for (let i = 0; i < 7; i++) {
+    const todayDay = today.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+
+    let daysToAdd = 0;
+    if (todayDay === 5) {
+      daysToAdd = 7; // Fri to next Fri
+    } else if (todayDay === 6) {
+      daysToAdd = 6; // Sat to next Fri
+    } else if (todayDay === 0) {
+      daysToAdd = 5; // Sun to next Fri
+    } else {
+      daysToAdd = 5 - todayDay;
+    }
+
+    for (let i = 0; i <= daysToAdd; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       dates.push(d);
@@ -266,7 +265,7 @@ const Booking = () => {
   const formatDateDisplay = (d: Date, index: number) => {
     if (index === 0) return "Today";
     if (index === 1) return "Tomorrow";
-    return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   };
 
   return (
@@ -283,13 +282,13 @@ const Booking = () => {
         <div className="relative z-10 flex flex-col items-center">
           <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300 mb-4">
             <img 
-              src="/client-logo.jpg" 
+              src="/logo.png" 
               alt="Grand Pavilion" 
               className="h-24 sm:h-32 md:h-40 w-auto object-contain"
             />
           </Link>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-            Reserve Your Turf
+            Reserve your slot
           </h1>
         </div>
       </div>
@@ -358,10 +357,11 @@ const Booking = () => {
             {/* Select Sport */}
             <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Select Sport</h2>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   { value: "cricket", label: "Cricket" },
-                  { value: "football", label: "Football" }
+                  { value: "football-7s", label: "Football (7s)" },
+                  { value: "football-11s", label: "Football (11s)" }
                 ].map(s => (
                   <button
                     key={s.value}
@@ -380,6 +380,12 @@ const Booking = () => {
                     )}
                   </button>
                 ))}
+              </div>
+              
+              <div className="mt-5 pt-4 border-t border-gray-100 text-sm text-gray-600 space-y-1.5 text-center font-semibold bg-gray-50 rounded-xl py-3">
+                <div>Cricket - 1600/hr</div>
+                <div>7-a-side - 1600/hr</div>
+                <div>11-a-side - ₹2200/hr</div>
               </div>
             </div>
 
@@ -407,10 +413,27 @@ const Booking = () => {
                   <div className="text-center py-8 text-gray-500">No slots available for this date.</div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {availableSlots.map(slot => {
-                      const isSelected = selectedSlots.some(s => s.slotId === slot.id);
-                      
+                    {(() => {
+                      // Sort slots so 17:00 (5 PM) starts first, wrapping around
+                      const sortedSlots = [...availableSlots].sort((a, b) => {
+                        const getSortValue = (h: number) => h >= 17 ? h - 17 : h + 7;
+                        return getSortValue(a.startHour) - getSortValue(b.startHour);
+                      });
+
+                      // Visible slots logic
+                      const visibleSlots = showAllSlots 
+                        ? sortedSlots 
+                        : sortedSlots.filter(s => {
+                            // Show slots from 17:00 up to 00:00 (which is startHour 0)
+                            return s.startHour >= 17 || s.startHour === 0;
+                          });
+
                       return (
+                        <>
+                          {visibleSlots.map(slot => {
+                            const isSelected = selectedSlots.some(s => s.slotId === slot.id);
+                            
+                            return (
                         <button
                           key={slot.id}
                           onClick={() => slot.available && toggleSlot(slot.id)}
@@ -426,14 +449,25 @@ const Booking = () => {
                           <div className={`font-semibold text-xs sm:text-sm whitespace-nowrap ${!slot.available && 'opacity-60'}`}>
                             {formatTime12Hour(slot.time)}
                           </div>
-                          
-                          {!slot.available && (
-                            <div className="text-[10px] text-red-500 font-bold mt-0.5 sm:mt-1 uppercase tracking-wider">Booked</div>
-                          )}
                         </button>
                       );
                     })}
-                  </div>
+                    
+                    {!showAllSlots && sortedSlots.length > 0 && (
+                      <button 
+                        onClick={() => setShowAllSlots(true)}
+                        className="col-span-full mt-2 flex flex-col items-center justify-center p-2 rounded-xl text-[#84cc16] hover:bg-[#A3E635]/10 transition-colors group"
+                      >
+                        <span className="text-xs font-semibold uppercase tracking-wider mb-1">Show More Slots</span>
+                        <div className="w-8 h-8 rounded-full bg-[#A3E635]/20 flex items-center justify-center group-hover:bg-[#A3E635]/30 transition-colors">
+                          <span className="text-sm font-bold">▽</span>
+                        </div>
+                      </button>
+                    )}
+                    </>
+                  );
+                })()}
+              </div>
                 )}
               </div>
             )}

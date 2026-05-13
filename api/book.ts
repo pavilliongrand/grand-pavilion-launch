@@ -1,38 +1,60 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createCalendarBooking, getOccupiedSlotsFromCalendar } from './lib/calendarService.js';
+import { z } from 'zod';
+import { createCalendarBooking, getOccupiedSlotsFromCalendar, deleteCalendarBooking } from './lib/calendarService.js';
 import { getPricingConfig } from './lib/firestore.js';
+import { verifyFirebaseToken } from './lib/verifyFirebaseToken.js';
+import { applyCors } from './lib/cors.js';
 
-interface BookingPayload {
-  name: string;
-  sport: 'cricket' | 'football';
-  date: string;
-  slots: Array<{slotId: string, turf?: number}>;
-  phone: string;
-  amount: number;
-  paymentMethod: string;
+// ── Zod Schema ───────────────────────────────────────────────
+const SlotSchema = z.object({
+  slotId: z.string().regex(/^\d{1,2}-\d{1,2}$/, 'Invalid slot ID format'),
+});
+
+const BookingSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  sport: z.enum(['cricket', 'football-7s', 'football-11s']),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  slots: z.array(SlotSchema).min(1, 'At least one slot required').max(5, 'Maximum 5 slots per booking'),
+  phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits'),
+  paymentMethod: z.string().default('cash'),
+});
+
+// ── Price Calculation (server-side, never trust client) ──────
+function calculateServerPrice(
+  sport: string,
+  slotIds: string[],
+  hourlyPricing: Array<{ hour: number; cricketPrice?: number; football7sPrice?: number; football11sPrice?: number; footballPrice?: number }>
+): number {
+  let total = 0;
+  for (const slotId of slotIds) {
+    const [startHour] = slotId.split('-').map(Number);
+    const priceRule = hourlyPricing.find((p) => p.hour === startHour);
+
+    if (sport === 'cricket') {
+      total += priceRule?.cricketPrice || 1600;
+    } else if (sport === 'football-11s') {
+      total += priceRule?.football11sPrice || 2200;
+    } else {
+      total += priceRule?.football7sPrice || priceRule?.footballPrice || 1600;
+    }
+  }
+  return total;
 }
 
 /**
  * API Route: /api/book
- * Create a booking and add to Google Calendar (CALENDAR = DATABASE)
- * Method: POST
- * Body: { name, sport, date, slots, phone, amount, paymentMethod }
- * 
- * Includes double-booking prevention via re-validation before insert.
+ * Create a booking and add to Google Calendar.
+ *
+ * Security:
+ *  - Requires a valid Firebase ID token in the Authorization header
+ *  - Server calculates the price — client amount is ignored
+ *  - Input validated with Zod
  */
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Accept');
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  applyCors(res, 'POST,OPTIONS');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
@@ -40,97 +62,104 @@ export default async function handler(
   }
 
   try {
-    const payload: BookingPayload = req.body;
+    // ── 1. Authenticate via Firebase ID token ──────────────
+    const tokenData = await verifyFirebaseToken(req.headers.authorization);
 
-    // Validate payload
-    if (!payload.name || !payload.sport || !payload.date || !payload.slots || !payload.phone || !payload.amount) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // ── 2. Validate input ──────────────────────────────────
+    const parsed = BookingSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: parsed.error.issues.map((i) => i.message),
+      });
+    }
+    const payload = parsed.data;
+
+    // Verify the phone in the token matches the booking phone
+    const expectedPhone = `+91${payload.phone}`;
+    if (tokenData.phone !== expectedPhone) {
+      return res.status(403).json({
+        error: 'Phone number mismatch. The verified phone does not match the booking phone.',
+      });
     }
 
-    // Check if sport is available/enabled (from Firestore)
+    // ── 3. Validate date is not in the past ────────────────
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const bookingDate = new Date(payload.date + 'T00:00:00+05:30');
+    if (bookingDate < today) {
+      return res.status(400).json({ error: 'Cannot book a date in the past' });
+    }
+
+    // ── 4. Check sport availability ────────────────────────
     const pricingData = await getPricingConfig();
     const sportAvailability = pricingData.sportAvailability || { cricket: true, football: true };
-    
-    if (!sportAvailability[payload.sport]) {
-      return res.status(400).json({ 
-        error: `${payload.sport.charAt(0).toUpperCase() + payload.sport.slice(1)} bookings are currently disabled. Please contact us for more information.` 
+    const baseSport = payload.sport.startsWith('football') ? 'football' : payload.sport;
+    if (!sportAvailability[baseSport]) {
+      return res.status(400).json({
+        error: `${baseSport.charAt(0).toUpperCase() + baseSport.slice(1)} bookings are currently disabled.`,
       });
     }
 
-    // ============================================
-    // DOUBLE BOOKING PREVENTION — Re-validation
-    // ============================================
-    // Re-fetch occupied slots RIGHT BEFORE booking to catch concurrent requests.
-    // This is the "check-then-act" guard that prevents most double bookings.
-    
-    if (payload.sport === 'football') {
-      for (const slot of payload.slots) {
-        // Check cricket conflict
-        const cricketSlots = await getOccupiedSlotsFromCalendar(payload.date, 'cricket');
-        if (cricketSlots.includes(slot.slotId)) {
-          return res.status(409).json({ 
-            error: 'This slot just got booked for cricket. Please refresh and select a different time.' 
-          });
-        }
+    // ── 5. Calculate price server-side ──────────────────────
+    const serverAmount = calculateServerPrice(
+      payload.sport,
+      payload.slots.map((s) => s.slotId),
+      pricingData.hourlyPricing || []
+    );
 
-        // Check specific turf conflict
-        if (slot.turf) {
-          const turfSlots = await getOccupiedSlotsFromCalendar(payload.date, 'football', slot.turf);
-          if (turfSlots.includes(slot.slotId)) {
-            return res.status(409).json({ 
-              error: `Turf ${slot.turf} just got booked for this slot. Please refresh and try again.` 
-            });
-          }
-        }
-      }
-    } else {
-      // Cricket: re-validate
-      const cricketOccupied = await getOccupiedSlotsFromCalendar(payload.date, 'cricket');
-      const football1Slots = await getOccupiedSlotsFromCalendar(payload.date, 'football', 1);
-      const football2Slots = await getOccupiedSlotsFromCalendar(payload.date, 'football', 2);
-      
-      for (const slot of payload.slots) {
-        if (cricketOccupied.includes(slot.slotId)) {
-          return res.status(409).json({ 
-            error: 'This cricket slot just got booked. Please refresh and select a different time.' 
-          });
-        }
-        
-        // Check if both football turfs are occupied (blocks cricket)
-        if (football1Slots.includes(slot.slotId) && football2Slots.includes(slot.slotId)) {
-          return res.status(409).json({ 
-            error: 'Both football turfs are booked for this slot, so cricket cannot be booked. Please select a different time.' 
-          });
-        }
-      }
-    }
-
-    // ============================================
-    // Create Google Calendar events for each slot
-    // ============================================
-    const eventIds: string[] = [];
-    
+    // ── 6. Double-booking prevention (check-then-act) ──────
+    const occupiedSlots = await getOccupiedSlotsFromCalendar(payload.date, payload.sport);
     for (const slot of payload.slots) {
-      const eventId = await createCalendarBooking({
-        name: payload.name,
-        sport: payload.sport,
-        date: payload.date,
-        slotId: slot.slotId,
-        phone: payload.phone,
-        amount: payload.amount / payload.slots.length, // Divide amount by number of slots
-        paymentMethod: payload.paymentMethod,
-        footballTurf: slot.turf,
+      if (occupiedSlots.includes(slot.slotId)) {
+        return res.status(409).json({
+          error: 'This slot just got booked. Please refresh and select a different time.',
+        });
+      }
+    }
+
+    // ── 7. Create calendar events with rollback on failure ─
+    const createdEventIds: string[] = [];
+
+    try {
+      for (const slot of payload.slots) {
+        const eventId = await createCalendarBooking({
+          name: payload.name,
+          sport: payload.sport,
+          date: payload.date,
+          slotId: slot.slotId,
+          phone: payload.phone,
+          amount: serverAmount / payload.slots.length,
+          paymentMethod: payload.paymentMethod,
+        });
+        createdEventIds.push(eventId);
+      }
+    } catch (bookingError) {
+      // Rollback: delete any events that were successfully created
+      console.error('Partial booking failure, rolling back:', bookingError);
+      for (const eventId of createdEventIds) {
+        try {
+          await deleteCalendarBooking(eventId);
+        } catch (rollbackError) {
+          console.error(`Failed to rollback event ${eventId}:`, rollbackError);
+        }
+      }
+      return res.status(500).json({
+        error: 'Booking failed. No slots were reserved. Please try again.',
       });
-      
-      eventIds.push(eventId);
     }
 
     return res.status(200).json({
       success: true,
       message: 'Booking confirmed! Event added to calendar.',
-      eventIds,
+      eventIds: createdEventIds,
+      amount: serverAmount,
     });
-  } catch (error) {
+  } catch (error: any) {
+    // Auth errors
+    if (error.message?.includes('Authorization') || error.message?.includes('Token') || error.message?.includes('token')) {
+      return res.status(401).json({ error: error.message });
+    }
     console.error('Error creating booking:', error);
     return res.status(500).json({ error: 'Failed to create booking. Please try again.' });
   }
