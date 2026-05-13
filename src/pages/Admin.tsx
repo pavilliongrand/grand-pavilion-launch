@@ -96,6 +96,21 @@ const Admin = () => {
   const [workingHours, setWorkingHours] = useState<WorkingHours>({ start: 6, end: 24 });
   const [sportAvailability, setSportAvailability] = useState({ cricket: true, football: true });
 
+  // Get admin key from session for API authentication
+  const getAdminKey = () => {
+    const session = localStorage.getItem('admin_session');
+    if (session) {
+      const parsed = JSON.parse(session);
+      return parsed.key || '';
+    }
+    return '';
+  };
+
+  const adminHeaders = () => ({
+    'Content-Type': 'application/json',
+    'X-Admin-Key': getAdminKey()
+  });
+
   useEffect(() => {
     if (isAuthenticated && activeTab === "bookings") {
       fetchBookings();
@@ -117,7 +132,7 @@ const Admin = () => {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/bookings');
+      const response = await fetch('/api/admin/bookings', { headers: adminHeaders() });
       const data = await response.json();
       setBookings(data.bookings || []);
     } catch (err) {
@@ -151,7 +166,7 @@ const Admin = () => {
   const fetchBlockedSlots = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/blocked-slots');
+      const response = await fetch('/api/admin/blocked-slots', { headers: adminHeaders() });
       const data = await response.json();
       setBlockedSlots(data.blockedSlots || []);
     } catch (err) {
@@ -176,7 +191,7 @@ const Admin = () => {
     try {
       const response = await fetch('/api/pricing', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify({ hourlyPricing: pricingRules, workingHours, sportAvailability })
       });
       
@@ -203,7 +218,7 @@ const Admin = () => {
     try {
       const response = await fetch('/api/admin/block-slots', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify({
           sport: blockSport,
           date: blockDate,
@@ -232,7 +247,7 @@ const Admin = () => {
     try {
       const response = await fetch('/api/admin/unblock-slots', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders(),
         body: JSON.stringify({ eventId: blockId })
       });
       
@@ -253,7 +268,8 @@ const Admin = () => {
     
     try {
       await fetch(`/api/admin/bookings/${bookingId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: adminHeaders()
       });
       fetchBookings();
     } catch (err) {

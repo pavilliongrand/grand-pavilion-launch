@@ -8,7 +8,7 @@ export default async function handler(
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Admin-Key');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -21,6 +21,13 @@ export default async function handler(
     }
 
     if (req.method === 'POST') {
+      // Admin authentication required for pricing changes
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+      const adminKey = req.headers['x-admin-key'] as string;
+      if (adminKey !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
       const { hourlyPricing, workingHours, sportAvailability } = req.body;
       
       if (!hourlyPricing || !Array.isArray(hourlyPricing)) {

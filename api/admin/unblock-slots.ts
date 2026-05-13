@@ -4,10 +4,17 @@ import { google } from 'googleapis';
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
 const PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n');
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Admin authentication
+  const adminKey = req.headers['x-admin-key'] as string;
+  if (adminKey !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {

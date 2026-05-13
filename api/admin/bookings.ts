@@ -6,11 +6,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Admin-Key');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
+  }
+
+  // Admin authentication
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+  const adminKey = req.headers['x-admin-key'] as string;
+  if (adminKey !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {

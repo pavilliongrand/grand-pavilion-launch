@@ -26,11 +26,9 @@ export async function getOccupiedSlotsFromCalendar(date: string, sport: string, 
   try {
     const calendar = getCalendarClient();
     
-    const timeMin = new Date(date);
-    timeMin.setHours(6, 0, 0, 0);
-    
-    const timeMax = new Date(date);
-    timeMax.setHours(23, 59, 59, 999);
+    // Use IST offset to ensure correct timezone on Vercel (which runs UTC)
+    const timeMin = new Date(`${date}T00:00:00+05:30`);
+    const timeMax = new Date(`${date}T23:59:59+05:30`);
 
     const response = await calendar.events.list({
       calendarId: CALENDAR_ID,
@@ -59,8 +57,10 @@ export async function getOccupiedSlotsFromCalendar(date: string, sport: string, 
         eventTurf === footballTurf
       );
       
-      // Include both bookings and blocked slots
-      if ((sportMatches || isBlocked) && slotId) {
+      // Blocked slots should only block the same sport, not all sports
+      const blockedForThisSport = isBlocked && eventSport === sport;
+      
+      if ((sportMatches || blockedForThisSport) && slotId) {
         occupiedSlotIds.push(slotId);
       }
     });
@@ -92,12 +92,16 @@ export async function createCalendarBooking(data: {
     // Parse slot ID to get start and end hours
     const [startHour, endHour] = data.slotId.split('-').map(Number);
     
-    // Create date-time objects (India timezone)
-    const startDateTime = new Date(data.date);
-    startDateTime.setHours(startHour, 0, 0, 0);
+    // Construct IST times directly to avoid UTC conversion issues on Vercel
+    const startDateTimeStr = `${data.date}T${String(startHour).padStart(2, '0')}:00:00+05:30`;
+    const endDateTimeStr = `${data.date}T${String(endHour === 24 ? 0 : endHour).padStart(2, '0')}:00:00+05:30`;
     
-    const endDateTime = new Date(data.date);
-    endDateTime.setHours(endHour, 0, 0, 0);
+    // If endHour is 0 (midnight), it's actually the next day
+    const startDateTime = new Date(startDateTimeStr);
+    const endDateTime = new Date(endDateTimeStr);
+    if (endHour === 0 || endHour === 24) {
+      endDateTime.setDate(endDateTime.getDate() + 1);
+    }
 
     const turfInfo = data.sport === 'football' && data.footballTurf ? ` - Turf ${data.footballTurf}` : '';
     const summary = `${data.sport.toUpperCase()}${turfInfo} - ${data.name}`;

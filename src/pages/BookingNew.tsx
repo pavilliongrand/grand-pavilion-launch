@@ -69,25 +69,7 @@ const Booking = () => {
     }
   }, [date, sport]);
 
-  useEffect(() => {
-    if (step === 2) {
-      const checkClipboard = async () => {
-        try {
-          if (navigator.clipboard && navigator.clipboard.readText) {
-            const text = await navigator.clipboard.readText();
-            const otpMatch = text.match(/\b\d{6}\b/);
-            if (otpMatch && otp === '') {
-              setOtp(otpMatch[0]);
-            }
-          }
-        } catch (err) {
-          console.log('Clipboard access not available');
-        }
-      };
-      const timer = setTimeout(checkClipboard, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [step]);
+
 
   const fetchSlots = async () => {
     setLoading(true);
@@ -205,6 +187,9 @@ const Booking = () => {
       console.error('Firebase OTP error:', err);
       if ((window as any).recaptchaVerifier) {
         try { (window as any).recaptchaVerifier.clear(); } catch (_) {}
+        // Clean up the DOM to avoid stacking invisible iframes
+        const container = document.getElementById('recaptcha-container');
+        if (container) container.innerHTML = '';
         (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           size: 'invisible',
           callback: () => {},
@@ -288,37 +273,28 @@ const Booking = () => {
     <div className="min-h-screen bg-[#F5F7FA] text-gray-900 relative overflow-hidden font-sans">
       <div id="recaptcha-container"></div>
       
-      {/* Premium Hero Header */}
-      <div className="relative h-48 sm:h-56 lg:h-64 w-full bg-gray-900 overflow-hidden shadow-sm">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="/booking-header.jpg" 
-            alt="Turf Facility" 
-            className="w-full h-full object-cover opacity-50 mix-blend-overlay"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-gray-900/20" />
-        </div>
-        
-        {/* Top Navigation */}
-        <div className="absolute top-0 left-0 right-0 z-20 p-4">
-          <Link to="/" className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-        </div>
+      {/* Clean White Header */}
+      <div className="relative pt-8 sm:pt-12 lg:pt-16 pb-6 sm:pb-10 w-full bg-white overflow-hidden shadow-sm flex flex-col items-center justify-center">
+        {/* Soft Background Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#A3E635]/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#84cc16]/10 rounded-full blur-[80px] pointer-events-none" />
 
-        {/* Content */}
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-end pb-8 px-4">
-          <div className="bg-white p-1.5 sm:p-2 rounded-xl shadow-lg mb-4 animate-fade-in transform hover:scale-105 transition-transform duration-300">
-            <img src="/logo.png" alt="Grand Pavilion" className="h-10 sm:h-12 w-auto object-contain" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white text-center tracking-tight drop-shadow-md">
+        {/* Logo */}
+        <div className="relative z-10 flex flex-col items-center">
+          <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300 mb-4">
+            <img 
+              src="/client-logo.jpg" 
+              alt="Grand Pavilion" 
+              className="h-24 sm:h-32 md:h-40 w-auto object-contain"
+            />
+          </Link>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
             Reserve Your Turf
           </h1>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-3xl -mt-4 relative z-30">
+      <div className="container mx-auto px-4 py-6 max-w-3xl relative z-30">
         
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">

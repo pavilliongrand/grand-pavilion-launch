@@ -26,10 +26,11 @@ const AdminLogin = ({ onAuthenticated }: AdminLoginProps) => {
       const data = await response.json();
 
       if (data.success) {
-        // Store session in localStorage
+        // Store session in localStorage (including password for API auth)
         localStorage.setItem('admin_session', JSON.stringify({
           authenticated: true,
-          timestamp: new Date().getTime()
+          timestamp: new Date().getTime(),
+          key: password
         }));
         onAuthenticated();
       } else {

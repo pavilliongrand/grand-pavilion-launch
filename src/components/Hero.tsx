@@ -14,12 +14,19 @@ const Hero = () => {
             backgroundPosition: 'center'
           }}
         />
-        {/* Animated gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#F5F7FA] via-transparent to-transparent" />
+        {/* Responsive gradient overlay for readability while keeping image visible */}
+        <div className="absolute inset-0 bg-gradient-to-b md:bg-gradient-to-r from-white/95 via-white/80 md:via-white/60 to-white/30 md:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#F5F7FA] via-[#F5F7FA]/80 md:via-transparent to-transparent" />
       </div>
 
-      <div className="container relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8">
+      {/* Top Logo */}
+      <div className="absolute top-6 left-6 sm:top-8 sm:left-8 lg:left-12 z-20">
+        <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300">
+          <img src="/client-logo.jpg" alt="Grand Pavilion" className="h-12 sm:h-16 w-auto object-contain drop-shadow-md" />
+        </Link>
+      </div>
+
+      <div className="container relative z-10 h-full flex flex-col justify-end md:justify-center pb-24 md:pb-0 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl space-y-8 animate-fade-in">
 
           {/* Main Heading */}
@@ -47,14 +54,16 @@ const Hero = () => {
                 Reserve Turf
               </Button>
             </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              className="bg-transparent text-gray-700 border-2 border-gray-200 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105"
-            >
-              View Facilities
-              <ArrowRight className="ml-2 h-6 w-6" />
-            </Button>
+            <a href="#about">
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-transparent text-gray-700 border-2 border-gray-200 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105"
+              >
+                View Facilities
+                <ArrowRight className="ml-2 h-6 w-6" />
+              </Button>
+            </a>
           </div>
         </div>
       </div>

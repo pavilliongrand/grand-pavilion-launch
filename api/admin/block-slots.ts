@@ -4,6 +4,7 @@ import { google } from 'googleapis';
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
 const PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n');
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 interface BlockSlotRequest {
   sport: 'cricket' | 'football';
@@ -15,6 +16,12 @@ interface BlockSlotRequest {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Admin authentication
+  const adminKey = req.headers['x-admin-key'] as string;
+  if (adminKey !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
@@ -36,10 +43,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const blockedEvents = [];
     for (const slotId of slotIds) {
       const [startHour] = slotId.split('-').map(Number);
-      const startTime = new Date(date);
-      startTime.setHours(startHour, 0, 0, 0);
-      const endTime = new Date(startTime);
-      endTime.setHours(startHour + 1, 0, 0, 0);
+      const endHour = startHour + 1;
+      // Construct IST times directly to avoid UTC issues on Vercel
+      const startTime = new Date(`${date}T${String(startHour).padStart(2, '0')}:00:00+05:30`);
+      const endTime = new Date(`${date}T${String(endHour === 24 ? 0 : endHour).padStart(2, '0')}:00:00+05:30`);
+      if (endHour === 24) {
+        endTime.setDate(endTime.getDate() + 1);
+      }
 
       const event = {
         summary: `BLOCKED - ${sport.toUpperCase()}`,
