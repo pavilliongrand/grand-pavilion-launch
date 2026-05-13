@@ -176,12 +176,14 @@ function generateSlots(sport: 'cricket' | 'football', pricingData: any, targetDa
       ? priceRule?.cricketPrice || 1500 
       : priceRule?.footballPrice || 1000;
 
+    const isWithinWorkingHours = hour >= workingHours.start && hour < workingHours.end;
+
     slots.push({
       id: `${hour}-${endHour}`,
       time: `${formatAMPM(hour)} - ${formatAMPM(endHour)}`,
       startHour: hour,
       endHour: endHour,
-      available: isWeekendAllowed,
+      available: isWeekendAllowed && isWithinWorkingHours,
       price: price,
     });
   }

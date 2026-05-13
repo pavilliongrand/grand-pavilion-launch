@@ -387,7 +387,7 @@ const Admin = () => {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 sm:flex-none px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap text-xs sm:text-sm ${
                 activeTab === tab.id
-                  ? 'bg-[#A3E635] text-[#1A2E05]'
+                  ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white shadow-md'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
@@ -418,8 +418,13 @@ const Admin = () => {
               </div>
             ) : bookings.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                <Calendar className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-50 text-gray-400" />
-                <p className="text-sm sm:text-base">No bookings found</p>
+                <div className="mx-auto mb-4 w-24 h-24 flex items-center justify-center rounded-full bg-gray-50">
+                  <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14a2 2 0 100-4 2 2 0 000 4z" />
+                  </svg>
+                </div>
+                <p className="text-sm sm:text-base font-medium">No bookings found</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -476,7 +481,7 @@ const Admin = () => {
               <button
                 onClick={savePricing}
                 disabled={saving}
-                className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 bg-[#A3E635] hover:bg-[#84cc16] disabled:bg-gray-200 text-[#1A2E05] disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-sm text-sm sm:text-base"
+                className="w-full sm:w-auto px-5 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#84cc16] to-[#65a30d] disabled:from-gray-200 disabled:to-gray-200 text-white disabled:text-gray-400 font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base"
               >
                 {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                 Save Changes
@@ -721,34 +726,45 @@ const Admin = () => {
 
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-3 text-gray-900">Select Slots to Block</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {availableSlotsForBlock.map(slot => (
-                        <button
-                          key={slot.id}
-                          onClick={() => {
-                            if (slot.available) {
-                              setSelectedBlockSlots(prev =>
-                                prev.includes(slot.id)
-                                  ? prev.filter(id => id !== slot.id)
-                                  : [...prev, slot.id]
-                              );
-                            }
-                          }}
-                          disabled={!slot.available}
-                          className={`p-4 rounded-xl border transition-all ${
-                            selectedBlockSlots.includes(slot.id)
-                              ? 'border-red-500 bg-red-50 text-red-700'
-                              : slot.available
-                              ? 'border-gray-200 hover:border-red-300 bg-white text-gray-700'
-                              : 'border-gray-100 bg-gray-50 text-gray-400 opacity-60 cursor-not-allowed'
-                          }`}
-                        >
-                          <div className="font-semibold text-sm mb-1">{slot.time}</div>
-                          <div className="text-xs">
-                            {slot.available ? 'Available' : 'Blocked'}
+                    <div className="flex flex-col gap-3">
+                      {availableSlotsForBlock.map(slot => {
+                        const isSelected = selectedBlockSlots.includes(slot.id);
+                        return (
+                          <div key={slot.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-white">
+                            <div className="font-semibold text-sm text-gray-900">{slot.time}</div>
+                            <div className="flex items-center gap-3">
+                              {!slot.available && (
+                                <span className="text-xs text-gray-500 font-medium">Blocked</span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  if (slot.available) {
+                                    setSelectedBlockSlots(prev =>
+                                      prev.includes(slot.id)
+                                        ? prev.filter(id => id !== slot.id)
+                                        : [...prev, slot.id]
+                                    );
+                                  }
+                                }}
+                                disabled={!slot.available}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                  !slot.available 
+                                    ? 'bg-gray-300 cursor-not-allowed' 
+                                    : isSelected 
+                                      ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d]' 
+                                      : 'bg-zinc-200'
+                                }`}
+                              >
+                                <span
+                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                    isSelected ? 'translate-x-6' : 'translate-x-1'
+                                  }`}
+                                />
+                              </button>
+                            </div>
                           </div>
-                        </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -783,8 +799,12 @@ const Admin = () => {
                 </div>
               ) : blockedSlots.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                  <Lock className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>No blocked slots</p>
+                  <div className="mx-auto mb-4 w-24 h-24 flex items-center justify-center rounded-full bg-gray-50">
+                    <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <p className="font-medium">No blocked slots</p>
                 </div>
               ) : (
                 <div className="space-y-3">

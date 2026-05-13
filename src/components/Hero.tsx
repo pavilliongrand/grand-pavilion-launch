@@ -7,7 +7,7 @@ const Hero = () => {
     <section className="relative h-screen w-full overflow-hidden bg-white">
       {/* Background Image with Better Visibility */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 opacity-20" 
+        <div className="absolute inset-0 opacity-100" 
           style={{
             backgroundImage: `url('/hero-sports.jpg')`,
             backgroundSize: 'cover',
@@ -15,18 +15,12 @@ const Hero = () => {
           }}
         />
         {/* Animated gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/90 via-white/80 to-[#F5F7FA]/90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#F5F7FA] via-transparent to-transparent" />
       </div>
 
       <div className="container relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl space-y-8 animate-fade-in">
-          {/* Green Logo/Brand Name */}
-          <div className="inline-block">
-            <span className="text-[#84cc16] font-bold tracking-widest uppercase text-sm md:text-base border-b-2 border-[#84cc16] pb-1">
-              Est. 2025
-            </span>
-          </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight font-heading leading-tight">
@@ -47,10 +41,10 @@ const Hero = () => {
             <Link to="/booking">
               <Button
                 size="lg"
-                className="bg-[#A3E635] hover:bg-[#84cc16] text-[#1A2E05] font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105"
+                className="bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#84cc16]/30 border-transparent"
               >
                 <Calendar className="mr-2 h-6 w-6" />
-                Book a Slot
+                Reserve Turf
               </Button>
             </Link>
             <Button
@@ -67,7 +61,7 @@ const Hero = () => {
 
       {/* Scroll Indicator */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce hidden md:block">
-        <div className="w-[2px] h-16 bg-gradient-to-b from-amber-500 to-transparent shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
+        <div className="w-[2px] h-16 bg-gradient-to-b from-[#84cc16] to-transparent shadow-[0_0_20px_rgba(132,204,22,0.5)]" />
       </div>
     </section>
   );

@@ -41,9 +41,9 @@ const Index = () => {
             Pay at venue. Simple. Fast. Secure.
           </p>
           <Link to="/booking">
-            <button className="group bg-[#A3E635] hover:bg-[#84cc16] text-[#1A2E05] font-bold py-5 px-12 sm:py-6 sm:px-16 rounded-2xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-3 mx-auto text-lg sm:text-xl shadow-sm hover:shadow-md">
+            <button className="group bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white font-bold py-5 px-12 sm:py-6 sm:px-16 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-3 mx-auto text-lg sm:text-xl">
               <Calendar className="w-6 h-6 sm:w-7 sm:h-7" />
-              Book Your Slot Now
+              Reserve Your Turf Now
             </button>
           </Link>
         </div>

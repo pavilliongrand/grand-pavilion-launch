@@ -76,10 +76,6 @@ const Footer = () => {
                   pavilliongrand@gmail.com
                 </a>
               </li>
-              <li className="flex items-start gap-2 text-gray-600 text-sm">
-                <Clock className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#84cc16]" />
-                <span>6:00 AM - 12:00 AM Daily</span>
-              </li>
             </ul>
           </div>
         </div>

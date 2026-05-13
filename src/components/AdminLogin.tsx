@@ -79,7 +79,7 @@ const AdminLogin = ({ onAuthenticated }: AdminLoginProps) => {
             <button
               type="submit"
               disabled={loading || !password}
-              className="w-full px-6 py-3.5 sm:py-4 bg-[#A3E635] hover:bg-[#84cc16] disabled:bg-gray-200 disabled:cursor-not-allowed text-[#1A2E05] disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+              className="w-full px-6 py-3.5 sm:py-4 bg-gradient-to-r from-[#84cc16] to-[#65a30d] disabled:from-gray-200 disabled:to-gray-200 disabled:cursor-not-allowed text-white disabled:text-gray-400 font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-2 text-sm sm:text-base"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
               Login

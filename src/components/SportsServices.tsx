@@ -78,7 +78,7 @@ const SportsServices = () => {
                                 </ul>
 
                                 <Button
-                                    className="w-full bg-white text-gray-900 hover:bg-[#A3E635] hover:text-[#1A2E05] font-bold h-12 border border-gray-200 rounded-lg transition-all duration-300 group-hover:shadow-lg group-hover:shadow-[#A3E635]/20"
+                                    className="w-full bg-white text-gray-900 hover:bg-gradient-to-r hover:from-[#84cc16] hover:to-[#65a30d] hover:text-white hover:border-transparent font-bold h-12 border border-gray-200 rounded-lg transition-all duration-300 group-hover:shadow-lg group-hover:shadow-[#84cc16]/30"
                                 >
                                     Book {service.sport} Slot
                                     <ArrowRight className="ml-2 w-4 h-4" />

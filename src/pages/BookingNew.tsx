@@ -288,23 +288,38 @@ const Booking = () => {
     <div className="min-h-screen bg-[#F5F7FA] text-gray-900 relative overflow-hidden font-sans">
       <div id="recaptcha-container"></div>
       
-      <header className="bg-white sticky top-0 z-50 border-b border-gray-100 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-green-600 transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div className="text-center flex-1">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">
-                Book Your Slot
-              </h1>
-            </div>
-            <div className="w-5"></div>
-          </div>
+      {/* Premium Hero Header */}
+      <div className="relative h-48 sm:h-56 lg:h-64 w-full bg-gray-900 overflow-hidden shadow-sm">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/booking-header.jpg" 
+            alt="Turf Facility" 
+            className="w-full h-full object-cover opacity-50 mix-blend-overlay"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-gray-900/20" />
         </div>
-      </header>
+        
+        {/* Top Navigation */}
+        <div className="absolute top-0 left-0 right-0 z-20 p-4">
+          <Link to="/" className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+        </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-3xl">
+        {/* Content */}
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-end pb-8 px-4">
+          <div className="bg-white p-1.5 sm:p-2 rounded-xl shadow-lg mb-4 animate-fade-in transform hover:scale-105 transition-transform duration-300">
+            <img src="/logo.png" alt="Grand Pavilion" className="h-10 sm:h-12 w-auto object-contain" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white text-center tracking-tight drop-shadow-md">
+            Reserve Your Turf
+          </h1>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-6 max-w-3xl -mt-4 relative z-30">
+        
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
             {error}
@@ -348,12 +363,12 @@ const Booking = () => {
                       onClick={() => setDate(dateStr)}
                       className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[80px] py-3 px-4 rounded-xl transition-all snap-start ${
                         isSelected 
-                          ? 'bg-[#A3E635] text-[#1A2E05] shadow-sm font-bold' 
+                          ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white shadow-md font-bold border-transparent' 
                           : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium'
                       }`}
                     >
                       <span className={`text-xs mb-1 ${isSelected ? 'opacity-80' : 'text-gray-400'}`}>
-                        {i === 0 ? 'Now' : d.toLocaleDateString('en-US', { weekday: 'short' })}
+                        {d.toLocaleDateString('en-US', { weekday: 'short' })}
                       </span>
                       <span className="text-sm">
                         {formatDateDisplay(d, i)}
@@ -426,7 +441,7 @@ const Booking = () => {
                           disabled={!slot.available}
                           className={`relative p-2 sm:p-3 rounded-xl border transition-all active:scale-95 flex flex-col items-center justify-center ${
                             isSelected
-                              ? 'bg-[#A3E635] border-[#A3E635] text-[#1A2E05]'
+                              ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d] border-transparent text-white shadow-md'
                               : slot.available
                               ? 'bg-white border-gray-200 text-gray-700 hover:border-[#A3E635]'
                               : 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
@@ -473,7 +488,7 @@ const Booking = () => {
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter your full name"
+                        placeholder=""
                         className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none transition-all"
                       />
                     </div>
@@ -490,7 +505,7 @@ const Booking = () => {
                             type="tel"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                            placeholder="9562766676"
+                            placeholder=""
                             maxLength={10}
                             className="flex-1 px-4 py-3 bg-white border border-l-0 border-gray-200 rounded-r-xl text-gray-900 placeholder:text-gray-400 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none transition-all"
                           />
@@ -499,7 +514,7 @@ const Booking = () => {
                       <button
                         onClick={sendOTP}
                         disabled={loading || !phone || phone.length !== 10 || !name}
-                        className="w-full sm:w-auto px-8 py-3 bg-[#A3E635] hover:bg-[#84cc16] disabled:bg-gray-200 disabled:cursor-not-allowed text-[#1A2E05] disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white disabled:from-gray-200 disabled:to-gray-200 disabled:cursor-not-allowed disabled:text-gray-400 font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-2"
                       >
                         {loading && <Loader2 className="w-5 h-5 animate-spin" />}
                         Send OTP
@@ -534,7 +549,7 @@ const Booking = () => {
               <button
                 onClick={verifyOTP}
                 disabled={loading || otp.length !== 6}
-                className="w-full px-6 py-4 bg-[#A3E635] hover:bg-[#84cc16] disabled:bg-gray-200 disabled:cursor-not-allowed text-[#1A2E05] disabled:text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-lg"
+                className="w-full px-6 py-4 bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white disabled:from-gray-200 disabled:to-gray-200 disabled:cursor-not-allowed disabled:text-gray-400 font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-2 text-lg"
               >
                 {loading && <Loader2 className="w-6 h-6 animate-spin" />}
                 {loading ? 'Verifying...' : 'Confirm Booking'}
@@ -577,7 +592,7 @@ const Booking = () => {
               </div>
               
               <Link to="/">
-                <button className="w-full px-6 py-4 bg-[#A3E635] hover:bg-[#84cc16] text-[#1A2E05] font-bold rounded-xl transition-all text-lg">
+                <button className="w-full px-6 py-4 bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 text-lg">
                   Return to Home
                 </button>
               </Link>
