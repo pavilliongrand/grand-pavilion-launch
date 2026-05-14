@@ -2,6 +2,11 @@
 
 Production booking system for Grand Pavilion Sports Turf, Palakkad, Kerala.
 
+**Docs:**  
+[HANDOVER.md](HANDOVER.md) — Client handover overview  
+[docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) — How to use the admin panel  
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Full technical deployment & setup guide
+
 ## Stack
 
 - **Frontend**: React + TypeScript + Vite, Tailwind CSS, shadcn/ui
