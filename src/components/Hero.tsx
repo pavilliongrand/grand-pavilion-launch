@@ -51,7 +51,7 @@ const Hero = () => {
                 className="bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#84cc16]/30 border-transparent"
               >
                 <Calendar className="mr-2 h-6 w-6" />
-                Reserve Turf
+                Reserve Your Slot
               </Button>
             </Link>
             <a href="#about">
