@@ -3,9 +3,9 @@ import { google } from 'googleapis';
 import { extractAndVerifyAdmin } from '../lib/verifyAdminToken.js';
 import { applyCors } from '../lib/cors.js';
 
-const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
-const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
-const PRIVATE_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n');
+const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || '';
+const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
+const PRIVATE_KEY = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   applyCors(res, 'DELETE,OPTIONS');

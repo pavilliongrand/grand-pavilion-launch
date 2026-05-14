@@ -20,22 +20,30 @@ const BookingSchema = z.object({
 });
 
 // ── Price Calculation (server-side, never trust client) ──────
+// Uses the same rates/cutoff schema that Firestore stores and the slots API reads.
 function calculateServerPrice(
   sport: string,
   slotIds: string[],
-  hourlyPricing: Array<{ hour: number; cricketPrice?: number; football7sPrice?: number; football11sPrice?: number; footballPrice?: number }>
+  pricingData: any
 ): number {
+  const rates = pricingData?.rates || {
+    cricketDay: 1600, cricketNight: 1600,
+    football7sDay: 1600, football7sNight: 1600,
+    football11sDay: 2200, football11sNight: 2200,
+  };
+  const cutoff: number = pricingData?.dayNightCutoffHour ?? 18;
+
   let total = 0;
   for (const slotId of slotIds) {
     const [startHour] = slotId.split('-').map(Number);
-    const priceRule = hourlyPricing.find((p) => p.hour === startHour);
+    const isNight = startHour >= cutoff;
 
     if (sport === 'cricket') {
-      total += priceRule?.cricketPrice || 1600;
+      total += isNight ? rates.cricketNight : rates.cricketDay;
     } else if (sport === 'football-11s') {
-      total += priceRule?.football11sPrice || 2200;
+      total += isNight ? rates.football11sNight : rates.football11sDay;
     } else {
-      total += priceRule?.football7sPrice || priceRule?.footballPrice || 1600;
+      total += isNight ? rates.football7sNight : rates.football7sDay;
     }
   }
   return total;
@@ -105,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const serverAmount = calculateServerPrice(
       payload.sport,
       payload.slots.map((s) => s.slotId),
-      pricingData.hourlyPricing || []
+      pricingData
     );
 
     // ── 6. Double-booking prevention (check-then-act) ──────

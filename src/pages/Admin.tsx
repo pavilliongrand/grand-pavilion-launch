@@ -71,9 +71,22 @@ const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const session = localStorage.getItem('admin_session');
     if (session) {
-      const { authenticated, timestamp } = JSON.parse(session);
-      const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-      return authenticated && (new Date().getTime() - timestamp < ONE_WEEK);
+      try {
+        const { authenticated, token } = JSON.parse(session);
+        if (!authenticated || !token) return false;
+        // Validate the JWT has not expired (token expires in 8 hours)
+        const payloadB64 = token.split('.')[1];
+        if (!payloadB64) return false;
+        const payload = JSON.parse(atob(payloadB64));
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+          localStorage.removeItem('admin_session');
+          return false;
+        }
+        return true;
+      } catch {
+        localStorage.removeItem('admin_session');
+        return false;
+      }
     }
     return false;
   });
@@ -103,8 +116,26 @@ const Admin = () => {
   const getAdminToken = () => {
     const session = localStorage.getItem('admin_session');
     if (session) {
-      const parsed = JSON.parse(session);
-      return parsed.token || '';
+      try {
+        const parsed = JSON.parse(session);
+        const token = parsed.token || '';
+        if (token) {
+          // Check JWT expiry before use
+          const payloadB64 = token.split('.')[1];
+          if (payloadB64) {
+            const payload = JSON.parse(atob(payloadB64));
+            if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+              // Token expired — force re-login
+              localStorage.removeItem('admin_session');
+              setIsAuthenticated(false);
+              return '';
+            }
+          }
+        }
+        return token;
+      } catch {
+        return '';
+      }
     }
     return '';
   };
@@ -136,6 +167,7 @@ const Admin = () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/bookings?t=${Date.now()}`, { headers: adminHeaders() });
+      if (response.status === 401) { handleLogout(); return; }
       const data = await response.json();
       setBookings(data.bookings || []);
     } catch (err) {
@@ -197,6 +229,7 @@ const Admin = () => {
     setLoading(true);
     try {
       const response = await fetch('/api/admin/blocked-slots', { headers: adminHeaders() });
+      if (response.status === 401) { handleLogout(); return; }
       const data = await response.json();
       setBlockedSlots(data.blockedSlots || []);
     } catch (err) {

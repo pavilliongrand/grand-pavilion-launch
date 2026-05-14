@@ -119,16 +119,11 @@ const Booking = () => {
       const cricketPrice = isPeak ? 1950 : 1500;
       const footballPrice = isPeak ? 1300 : 1000;
       
-      let nextHour = hour + 1;
-      let nextHourStr = String(nextHour).padStart(2, '0');
-      if (nextHour === 24) {
-        nextHour = 0;
-        nextHourStr = '00';
-      }
+      const nextHour = hour + 1;
 
       slots.push({
-        id: `${date}-${hour}`,
-        time: `${String(hour).padStart(2, '0')}:00 - ${nextHourStr}:00`,
+        id: `${hour}-${nextHour}`,
+        time: `${String(hour).padStart(2, '0')}:00 - ${String(nextHour === 24 ? 0 : nextHour).padStart(2, '0')}:00`,
         startHour: hour,
         endHour: nextHour,
         available: Math.random() > 0.3, // Randomly make some booked for realism
