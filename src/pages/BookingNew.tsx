@@ -282,7 +282,7 @@ const Booking = () => {
         <div className="relative z-10 flex flex-col items-center">
           <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300 mb-4">
             <img 
-              src="/logo.png" 
+              src="/logo-transparent.png" 
               alt="Grand Pavilion" 
               className="h-24 sm:h-32 md:h-40 w-auto object-contain"
             />
