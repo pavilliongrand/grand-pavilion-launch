@@ -195,8 +195,8 @@ export async function getAllBookings(startDate: string, endDate: string) {
     
     const response = await calendar.events.list({
       calendarId: CALENDAR_ID,
-      timeMin: new Date(startDate).toISOString(),
-      timeMax: new Date(endDate).toISOString(),
+      timeMin: new Date(`${startDate}T00:00:00+05:30`).toISOString(),
+      timeMax: new Date(`${endDate}T23:59:59+05:30`).toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });

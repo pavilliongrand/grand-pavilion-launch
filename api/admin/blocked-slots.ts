@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           sport: event.extendedProperties?.private?.sport || '',
           date: dateStr,
           slotIds: [event.extendedProperties?.private?.slotId || ''],
-          slotTimes: [`${startHourIST}:00 - ${endHourIST}:00`],
+          slotTimes: [`${startHourIST}:00 - ${endHourIST === 0 ? 24 : endHourIST}:00`],
           reason: event.extendedProperties?.private?.reason || '',
           createdAt: event.created || '',
         };

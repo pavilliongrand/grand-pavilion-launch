@@ -1,4 +1,4 @@
-import { Calendar, Clock } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 import { Link } from "react-router-dom";
 

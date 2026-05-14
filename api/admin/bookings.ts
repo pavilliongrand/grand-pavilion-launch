@@ -19,14 +19,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      // Get all bookings for the next 30 days
-      const today = new Date();
-      const endDate = new Date();
-      endDate.setDate(today.getDate() + 30);
+      // Get bookings: last 7 days + next 30 days (IST-aware)
+      const istNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const startDate = new Date(istNow);
+      startDate.setDate(istNow.getDate() - 7);
+      const endDate = new Date(istNow);
+      endDate.setDate(istNow.getDate() + 30);
+      const toISTDateStr = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
       const events = await getAllBookings(
-        today.toISOString().split('T')[0],
-        endDate.toISOString().split('T')[0]
+        toISTDateStr(startDate),
+        toISTDateStr(endDate)
       );
 
       // Transform events to booking format (exclude blocked/admin events)
@@ -49,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             sport: event.extendedProperties?.private?.sport || 'unknown',
             date: dateStr,
             slots: [event.extendedProperties?.private?.slotId || ''],
-            slotTimes: [`${startHourIST}:00 - ${endHourIST}:00`],
+            slotTimes: [`${startHourIST}:00 - ${endHourIST === 0 ? 24 : endHourIST}:00`],
             phone: event.extendedProperties?.private?.phone || '',
             amount: parseInt(event.extendedProperties?.private?.amount || '0'),
             status: event.extendedProperties?.private?.status || 'pending',

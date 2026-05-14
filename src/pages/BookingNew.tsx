@@ -35,6 +35,26 @@ const formatTime12Hour = (timeStr: string) => {
   return `${formatPart(parts[0])} - ${formatPart(parts[1])}`;
 };
 
+const CricketSVG = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m11.4 15.63-8.82 8.82a1.32 1.32 0 0 1-1.87-1.87l8.82-8.82" />
+    <path d="M12.8 14.23a4 4 0 0 0 5.66 0l4.24-4.24a4 4 0 0 0 0-5.66l-.05-.05a4 4 0 0 0-5.66 0l-4.24 4.24a4 4 0 0 0 0 5.66z" />
+    <circle cx="5" cy="5" r="2" />
+  </svg>
+);
+
+const FootballSVG = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+    <path d="m9 12-4.5-3" />
+    <path d="m15 12 4.5-3" />
+    <path d="m12 15 0 7" />
+    <path d="m9 12-2 5" />
+    <path d="m15 12 2 5" />
+  </svg>
+);
+
 const Booking = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -113,8 +133,7 @@ const Booking = () => {
     const dayOfWeek = targetDate.getDay();
     const today = new Date();
     const todayDayOfWeek = today.getDay();
-    const todayDateStr = today.toISOString().split('T')[0];
-    
+
     // Weekend slots (Sat=6, Sun=0) only bookable:
     // - On Friday (today) for this weekend (Sat/Sun)
     // - On Friday (today) for next week's weekend (next Sat/Sun) which are still within the 7-day window
@@ -130,18 +149,18 @@ const Booking = () => {
 
   const generateMockSlots = (date: string, sport: string) => {
     const slots = [];
-    // Only generate working hours (6 AM – 11 PM = 17 slots)
-    for (let hour = 6; hour < 23; hour++) {
-      const isPeak = hour >= 18;
+    // Generate 24 hours
+    for (let hour = 0; hour < 24; hour++) {
+      const isPeak = hour >= 18 || hour < 6;
       const cricketPrice = isPeak ? 1950 : 1500;
       const footballPrice = isPeak ? 1300 : 1000;
       const nextHour = hour + 1;
 
       slots.push({
         id: `${hour}-${nextHour}`,
-        time: `${String(hour).padStart(2, '0')}:00 - ${String(nextHour).padStart(2, '0')}:00`,
+        time: `${String(hour).padStart(2, '0')}:00 - ${String(nextHour === 24 ? '00' : nextHour).padStart(2, '0')}:00`,
         startHour: hour,
-        endHour: nextHour,
+        endHour: nextHour === 24 ? 0 : nextHour,
         available: Math.random() > 0.3,
         price: sport === 'cricket' ? cricketPrice : footballPrice
       });
@@ -212,7 +231,11 @@ const Booking = () => {
     try {
       const credential = await confirmationResult.confirm(otp);
       const idToken = await credential.user.getIdToken();
-      await createBooking(idToken);
+      try {
+        await createBooking(idToken);
+      } catch (bookingErr: any) {
+        setError(bookingErr.message || 'Booking failed. Please try again.');
+      }
     } catch (err: any) {
       console.error('OTP verification error:', err);
       setError('Invalid OTP. Please try again.');
@@ -281,15 +304,12 @@ const Booking = () => {
     <div className="min-h-screen bg-[#F5F7FA] font-sans">
       <div id="recaptcha-container" />
 
-      {/* Dark sticky header */}
-      <div className="bg-gray-900 px-4 py-3.5 flex items-center justify-between sticky top-0 z-50">
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-8 w-auto object-contain brightness-0 invert" />
-          <span className="text-[#84cc16] font-bold text-sm tracking-widest uppercase">Grand Pavilion</span>
+      {/* Logo Header */}
+      <div className="bg-white px-4 py-5 flex items-center justify-center border-b border-gray-100 mb-2">
+        <Link to="/" className="flex flex-col items-center gap-1.5">
+          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-10 w-auto object-contain brightness-0" />
+          <span className="text-[#84cc16] font-bold text-[10px] tracking-widest uppercase">Grand Pavilion</span>
         </Link>
-        <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-          <User className="w-4 h-4 text-gray-400" />
-        </div>
       </div>
 
       {step === 1 && (
@@ -311,9 +331,9 @@ const Booking = () => {
           <div className="px-4 mb-5">
             <div className="flex gap-2.5 overflow-x-auto pb-1 hide-scrollbar">
               {[
-                { value: "cricket", label: "Cricket", icon: "🏏" },
-                { value: "football-7s", label: "Football (7s)", icon: "⚽" },
-                { value: "football-11s", label: "Football (11s)", icon: "⚽" },
+                { value: "cricket", label: "Cricket", Icon: CricketSVG },
+                { value: "football-7s", label: "Football (7s)", Icon: FootballSVG },
+                { value: "football-11s", label: "Football (11s)", Icon: FootballSVG },
               ].map(s => {
                 const priceRange = getSportPriceRange(s.value);
                 const isSel = sport === s.value;
@@ -326,7 +346,9 @@ const Booking = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-2xl leading-none">{s.icon}</span>
+                      <span className={`w-6 h-6 flex items-center justify-center ${isSel ? 'text-[#84cc16]' : 'text-gray-400'}`}>
+                        <s.Icon className="w-full h-full" />
+                      </span>
                       {isSel && (
                         <div className="w-5 h-5 bg-[#84cc16] rounded-full flex items-center justify-center">
                           <Check className="w-3 h-3 text-white" strokeWidth={3} />
@@ -413,28 +435,14 @@ const Booking = () => {
             ) : availableSlots.length === 0 ? (
               <div className="text-center py-8 text-gray-400 text-sm">No slots available for this date.</div>
             ) : (() => {
-              const sortedSlots = [...availableSlots].sort((a, b) => {
-                const getSortValue = (h: number) => h >= 17 ? h - 17 : h + 7;
-                return getSortValue(a.startHour) - getSortValue(b.startHour);
-              });
+              const sortedSlots = [...availableSlots].sort((a, b) => a.startHour - b.startHour);
               const isToday = date === getTodayDateStr();
               const currentHour = new Date().getHours();
-              const visibleSlots = showAllSlots
-                ? sortedSlots.filter(s => !isToday || s.startHour > currentHour || s.startHour < 6)
-                : sortedSlots.filter(s => {
-                    if (isToday && s.startHour <= currentHour && s.startHour >= 6) return false;
-                    return s.startHour >= 17 || s.startHour === 0;
-                  });
-              const hiddenCount = sortedSlots.length - visibleSlots.length;
+              const visibleSlots = sortedSlots.filter(s => !isToday || s.startHour > currentHour);
               return (
                 <>
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="font-bold text-gray-900">Available Slots</h2>
-                    {!showAllSlots && hiddenCount > 0 && (
-                      <button onClick={() => setShowAllSlots(true)} className="text-sm font-semibold text-[#84cc16]">
-                        Show {hiddenCount} More
-                      </button>
-                    )}
                   </div>
                   <div className="space-y-2">
                     {visibleSlots.map(slot => {
