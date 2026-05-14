@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar as CalendarIcon, Phone, Check, Loader2, Shield, User, Sun, Lightbulb, X } from "lucide-react";
+import { Calendar as CalendarIcon, Phone, Check, Loader2, Shield, User, Sun, Lightbulb } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 
@@ -50,6 +50,7 @@ const Booking = () => {
   const [otp, setOtp] = useState("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [showAllSlots, setShowAllSlots] = useState(false);
+  const [pricing, setPricing] = useState<{ rates?: { cricketDay: number; cricketNight: number; football7sDay: number; football7sNight: number; football11sDay: number; football11sNight: number }; dayNightCutoffHour?: number } | null>(null);
   
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -66,11 +67,25 @@ const Booking = () => {
   useEffect(() => {
     if (date && sport) {
       fetchSlots();
-      setSelectedSlots([]); // Clear selected slots when date or sport changes
+      setSelectedSlots([]);
     }
   }, [date, sport]);
 
+  useEffect(() => {
+    fetch('/api/pricing')
+      .then(r => r.json())
+      .then(data => setPricing(data))
+      .catch(() => {});
+  }, []);
 
+  const getSportPriceRange = (sportVal: string) => {
+    if (!pricing?.rates) return null;
+    const r = pricing.rates;
+    if (sportVal === 'cricket') return { day: r.cricketDay, night: r.cricketNight };
+    if (sportVal === 'football-7s') return { day: r.football7sDay, night: r.football7sNight };
+    if (sportVal === 'football-11s') return { day: r.football11sDay, night: r.football11sNight };
+    return null;
+  };
 
   const fetchSlots = async () => {
     setLoading(true);
@@ -262,309 +277,262 @@ const Booking = () => {
   const next7Days = getNext7Days();
   const getTodayDateStr = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
-  const formatDateDisplay = (d: Date, index: number) => {
-    if (index === 0) return "Today";
-    if (index === 1) return "Tomorrow";
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-  };
-
   return (
-    <div className="min-h-screen bg-[#F5F7FA] text-gray-900 relative overflow-hidden font-sans">
-      <div id="recaptcha-container"></div>
-      
-      {/* Clean White Header */}
-      <div className="relative pt-8 sm:pt-12 lg:pt-16 pb-6 sm:pb-10 w-full bg-white overflow-hidden shadow-sm flex flex-col items-center justify-center">
-        {/* Soft Background Elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#A3E635]/10 rounded-full blur-[80px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#84cc16]/10 rounded-full blur-[80px] pointer-events-none" />
+    <div className="min-h-screen bg-[#F5F7FA] font-sans">
+      <div id="recaptcha-container" />
 
-        {/* Logo */}
-        <div className="relative z-10 flex flex-col items-center">
-          <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300 mb-4">
-            <img 
-              src="/logo-transparent.png" 
-              alt="Grand Pavilion" 
-              className="h-16 sm:h-24 md:h-32 w-auto object-contain"
-            />
-          </Link>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-            Reserve your slot
-          </h1>
+      {/* Dark sticky header */}
+      <div className="bg-gray-900 px-4 py-3.5 flex items-center justify-between sticky top-0 z-50">
+        <Link to="/" className="flex items-center gap-2.5">
+          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-8 w-auto object-contain brightness-0 invert" />
+          <span className="text-[#84cc16] font-bold text-sm tracking-widest uppercase">Grand Pavilion</span>
+        </Link>
+        <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+          <User className="w-4 h-4 text-gray-400" />
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-3xl relative z-30">
-        
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
-            {error}
+      {step === 1 && (
+        <div className="pb-10">
+
+          {/* Title */}
+          <div className="px-4 pt-5 pb-4">
+            <h1 className="text-2xl font-bold text-gray-900">Reserve your slot</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Premium sports turf booking</p>
           </div>
-        )}
 
-        {step === 1 && (
-          <div className="space-y-6">
-            
-            {/* Pick a Date */}
-            <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-              <div className="flex justify-end items-center mb-4">
-                <button 
-                  onClick={() => dateInputRef.current?.showPicker()} 
-                  className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors text-green-600"
-                >
-                  <CalendarIcon className="w-5 h-5" />
-                </button>
-                <input 
-                  type="date" 
-                  ref={dateInputRef}
-                  min={getTodayDateStr()}
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="absolute opacity-0 w-0 h-0 pointer-events-none"
-                />
-              </div>
-              
-              <div 
-                ref={dateScrollRef}
-                className="flex overflow-x-auto gap-3 pb-2 snap-x hide-scrollbar"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-              >
-                {next7Days.map((d, i) => {
-                  const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-                  const isSelected = date === dateStr;
-                  return (
-                    <button
-                      key={dateStr}
-                      onClick={() => setDate(dateStr)}
-                      className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[80px] py-3 px-4 rounded-xl transition-all snap-start ${
-                        isSelected 
-                          ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white shadow-md font-bold border-transparent' 
-                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium'
-                      }`}
-                    >
-                      <span className={`text-xs mb-1 ${isSelected ? 'opacity-80' : 'text-gray-400'}`}>
-                        {d.toLocaleDateString('en-US', { weekday: 'short' })}
-                      </span>
-                      <span className="text-sm">
-                        {formatDateDisplay(d, i)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+          {error && (
+            <div className="mx-4 mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
+              {error}
             </div>
+          )}
 
-            {/* Select Sport */}
-            <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {[
-                  { value: "cricket", label: "Cricket" },
-                  { value: "football-7s", label: "Football (7s)" },
-                  { value: "football-11s", label: "Football (11s)" }
-                ].map(s => (
+          {/* Sport Selector */}
+          <div className="px-4 mb-5">
+            <div className="flex gap-2.5 overflow-x-auto pb-1 hide-scrollbar">
+              {[
+                { value: "cricket", label: "Cricket", icon: "🏏" },
+                { value: "football-7s", label: "Football (7s)", icon: "⚽" },
+                { value: "football-11s", label: "Football (11s)", icon: "⚽" },
+              ].map(s => {
+                const priceRange = getSportPriceRange(s.value);
+                const isSel = sport === s.value;
+                return (
                   <button
                     key={s.value}
                     onClick={() => setSport(s.value as any)}
-                    className={`relative p-4 rounded-xl border-2 transition-all text-left flex items-center justify-between ${
-                      sport === s.value
-                        ? 'border-[#A3E635] bg-[#F7FEE7]'
-                        : 'border-gray-100 bg-white hover:border-gray-200'
+                    className={`flex-shrink-0 flex flex-col p-3 rounded-2xl border-2 min-w-[120px] transition-all text-left ${
+                      isSel ? 'border-[#84cc16] bg-[#F7FEE7] shadow-sm' : 'border-gray-200 bg-white'
                     }`}
                   >
-                    <div className="font-bold text-gray-900 text-xs sm:text-sm leading-tight">{s.label}</div>
-                    {sport === s.value && (
-                      <div className="w-5 h-5 bg-[#A3E635] rounded-full flex items-center justify-center">
-                        <Check className="w-3 h-3 text-[#1A2E05]" strokeWidth={3} />
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl leading-none">{s.icon}</span>
+                      {isSel && (
+                        <div className="w-5 h-5 bg-[#84cc16] rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="font-bold text-gray-900 text-sm">{s.label}</div>
+                    {priceRange && (
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        ₹{priceRange.day.toLocaleString()} – ₹{priceRange.night.toLocaleString()}
                       </div>
                     )}
                   </button>
-                ))}
-              </div>
-              
-
+                );
+              })}
             </div>
+          </div>
 
-            {/* Available Time Slots */}
-            {date && (
-              <div className="bg-white rounded-2xl p-4 sm:p-5 md:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-                {(() => {
-                    const d = new Date(date);
-                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    const isFridayToday = new Date().getDay() === 5;
-                    if (isWeekend && !isFridayToday) {
-                      return (
-                        <div className="flex justify-end items-center mb-4">
-                          <span className="text-xs font-semibold text-red-500 bg-red-50 px-2 py-1 rounded">Weekends only available on Fridays</span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
+          {/* Date Strip */}
+          <div className="px-4 mb-5">
+            <div ref={dateScrollRef} className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              {next7Days.map((d, i) => {
+                const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+                const isSel = date === dateStr;
+                return (
+                  <button
+                    key={dateStr}
+                    onClick={() => setDate(dateStr)}
+                    className={`flex-shrink-0 flex flex-col items-center justify-center min-w-[52px] py-2.5 px-2 rounded-xl transition-all ${
+                      isSel ? 'bg-[#84cc16] text-white shadow-sm' : 'bg-white border border-gray-200 text-gray-700'
+                    }`}
+                  >
+                    <span className={`text-[10px] font-semibold uppercase tracking-wide ${isSel ? 'text-white/80' : 'text-gray-400'}`}>
+                      {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </span>
+                    <span className="text-base font-bold leading-tight">{d.getDate()}</span>
+                    {i <= 1 && (
+                      <span className={`text-[9px] font-medium ${isSel ? 'text-white/80' : 'text-gray-400'}`}>
+                        {i === 0 ? 'Today' : 'Tomorrow'}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => dateInputRef.current?.showPicker()}
+                className="flex-shrink-0 flex items-center justify-center min-w-[48px] rounded-xl bg-white border border-gray-200 text-gray-400 hover:border-gray-300"
+              >
+                <CalendarIcon className="w-4 h-4" />
+              </button>
+              <input
+                type="date"
+                ref={dateInputRef}
+                min={getTodayDateStr()}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="absolute opacity-0 w-0 h-0 pointer-events-none"
+              />
+            </div>
+          </div>
 
-                {loading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#A3E635]" />
+          {/* Weekend warning */}
+          {(() => {
+            const d = new Date(date);
+            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+            const isFridayToday = new Date().getDay() === 5;
+            if (isWeekend && !isFridayToday) {
+              return (
+                <div className="mx-4 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2">
+                  <span className="text-amber-500 text-base leading-none">⚠</span>
+                  <p className="text-amber-700 text-sm font-medium">Slots only available to book on Friday for weekends.</p>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Available Slots */}
+          <div className="px-4">
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-7 h-7 animate-spin text-[#84cc16]" />
+              </div>
+            ) : availableSlots.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 text-sm">No slots available for this date.</div>
+            ) : (() => {
+              const sortedSlots = [...availableSlots].sort((a, b) => {
+                const getSortValue = (h: number) => h >= 17 ? h - 17 : h + 7;
+                return getSortValue(a.startHour) - getSortValue(b.startHour);
+              });
+              const isToday = date === getTodayDateStr();
+              const currentHour = new Date().getHours();
+              const visibleSlots = showAllSlots
+                ? sortedSlots.filter(s => !isToday || s.startHour > currentHour || s.startHour < 6)
+                : sortedSlots.filter(s => {
+                    if (isToday && s.startHour <= currentHour && s.startHour >= 6) return false;
+                    return s.startHour >= 17 || s.startHour === 0;
+                  });
+              const hiddenCount = sortedSlots.length - visibleSlots.length;
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="font-bold text-gray-900">Available Slots</h2>
+                    {!showAllSlots && hiddenCount > 0 && (
+                      <button onClick={() => setShowAllSlots(true)} className="text-sm font-semibold text-[#84cc16]">
+                        Show {hiddenCount} More
+                      </button>
+                    )}
                   </div>
-                ) : availableSlots.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">No slots available for this date.</div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-                    {(() => {
-                      // Sort slots so 17:00 (5 PM) starts first, wrapping around
-                      const sortedSlots = [...availableSlots].sort((a, b) => {
-                        const getSortValue = (h: number) => h >= 17 ? h - 17 : h + 7;
-                        return getSortValue(a.startHour) - getSortValue(b.startHour);
-                      });
-
-                      // Visible slots logic
-                      const now = new Date();
-                      const currentHour = now.getHours();
-                      const isToday = date === getTodayDateStr();
-
-                      const visibleSlots = showAllSlots 
-                        ? sortedSlots.filter(s => !isToday || s.startHour > currentHour || s.startHour < 6)
-                        : sortedSlots.filter(s => {
-                            // Hide if past hour today
-                            if (isToday && s.startHour <= currentHour && s.startHour >= 6) return false;
-                            
-                            // Show slots from 17:00 up to 00:00 (which is startHour 0)
-                            return s.startHour >= 17 || s.startHour === 0;
-                          });
-
-                      const hiddenSlotsCount = sortedSlots.length - visibleSlots.length;
-
+                  <div className="space-y-2">
+                    {visibleSlots.map(slot => {
+                      const isSel = selectedSlots.some(s => s.slotId === slot.id);
+                      const isNight = slot.startHour >= 18 || slot.startHour < 6;
+                      const [startTime, endTime] = formatTime12Hour(slot.time).split(' - ');
                       return (
-                        <>
-                          {visibleSlots.map(slot => {
-                            const isSelected = selectedSlots.some(s => s.slotId === slot.id);
-                            
-                            return (
                         <button
                           key={slot.id}
                           onClick={() => slot.available && toggleSlot(slot.id)}
                           disabled={!slot.available}
-                          className={`relative p-1.5 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl border-2 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[64px] sm:min-h-[80px] ${
-                            isSelected
-                              ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d] border-transparent text-white shadow-md'
+                          className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 transition-all ${
+                            isSel
+                              ? 'border-[#84cc16] bg-[#F7FEE7]'
                               : slot.available
-                              ? 'bg-white border-gray-200 text-gray-700 hover:border-[#A3E635] hover:shadow-sm'
-                              : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed relative'
+                              ? 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                              : 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
                           }`}
                         >
-                          {!slot.available && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="absolute w-full h-0.5 bg-gray-300 rounded"></div>
-                              <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300" strokeWidth={3} />
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isNight ? 'bg-indigo-50' : 'bg-amber-50'}`}>
+                              {isNight ? <Lightbulb className="w-4 h-4 text-indigo-400" /> : <Sun className="w-4 h-4 text-amber-400" />}
                             </div>
-                          )}
-                          <div className={`font-semibold flex flex-col items-center gap-0.5 ${
-                            !slot.available ? 'opacity-40' : 'opacity-100'
-                          }`}>
-                            {(slot.startHour >= 18 || slot.startHour < 6) ? <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
-                            <span className="text-[9px] sm:text-[11px] leading-tight text-center">
-                              {formatTime12Hour(slot.time).replace(' - ', '\n')}
-                            </span>
+                            <div className="text-left">
+                              <div className={`font-semibold text-sm ${isSel ? 'text-gray-900' : slot.available ? 'text-gray-800' : 'text-gray-400'}`}>
+                                {startTime} – {endTime}
+                              </div>
+                              {!slot.available && <div className="text-xs text-red-400 font-medium">Booked</div>}
+                            </div>
                           </div>
-                          {isSelected && (
-                            <div className="text-[11px] sm:text-[10px] font-bold opacity-90 mt-1">₹{slot.price}</div>
-                          )}
+                          <div className="flex items-center gap-2.5">
+                            <span className={`font-bold text-sm ${isSel ? 'text-[#65a30d]' : 'text-gray-700'}`}>₹{slot.price.toLocaleString()}</span>
+                            {isSel && (
+                              <div className="w-6 h-6 bg-[#84cc16] rounded-full flex items-center justify-center">
+                                <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                              </div>
+                            )}
+                          </div>
                         </button>
                       );
                     })}
-                    
-                    {!showAllSlots && hiddenSlotsCount > 0 && (
-                      <button 
-                        onClick={() => setShowAllSlots(true)}
-                        className="col-span-full mt-2 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border-2 border-dashed border-[#84cc16] bg-[#F7FEE7] text-[#84cc16] hover:bg-[#f0fdcc] transition-colors flex flex-col items-center justify-center gap-1 group cursor-pointer text-xs sm:text-sm"
-                      >
-                        <span className="font-semibold uppercase tracking-wider">Show {hiddenSlotsCount} More</span>
-                        <span className="text-base sm:text-lg transition-transform group-hover:translate-y-1">▼</span>
-                      </button>
-                    )}
-                    </>
-                  );
-                })()}
-              </div>
-                )}
-              </div>
-            )}
-
-            {/* Booking Summary & Next */}
-            {selectedSlots.length > 0 && (
-              <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border-2 border-[#A3E635]">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Booking Summary</h3>
-                
-                <div className="mb-6 bg-gradient-to-r from-[#F7FEE7] to-[#F5FEE0] rounded-xl p-4 border border-[#A3E635]/30">
-                  <div className="text-xs text-gray-500 font-semibold mb-3 uppercase tracking-wider">Selected Timings</div>
-                  <div className="space-y-1.5 mb-4">
-                    {getSelectedTimings().map((timing, idx) => (
-                      <div key={idx} className="font-bold text-gray-900 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#A3E635]" />
-                        {timing}
-                      </div>
-                    ))}
                   </div>
-                  <div className="pt-4 border-t border-[#A3E635]/20">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-gray-600">Total Amount:</span>
-                      <span className="text-2xl font-bold text-[#84cc16]">₹{calculateTotal()}</span>
-                    </div>
-                    <p className="text-xs font-semibold text-gray-500 text-center mt-3">
-                      Pay at venue
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">Full Name</label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder=""
-                        className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700">Phone Number</label>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <div className="flex-1">
-                        <div className="relative flex">
-                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
-                          <span className="pl-12 pr-3 py-3 bg-gray-50 border border-r-0 border-gray-200 rounded-l-xl text-gray-600 font-semibold">+91</span>
-                          <input
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                            placeholder=""
-                            maxLength={10}
-                            className="flex-1 px-4 py-3 bg-white border border-l-0 border-gray-200 rounded-r-xl text-gray-900 placeholder:text-gray-400 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none transition-all"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        onClick={sendOTP}
-                        disabled={loading || !phone || phone.length !== 10 || !name}
-                        className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white disabled:from-gray-200 disabled:to-gray-200 disabled:cursor-not-allowed disabled:text-gray-400 font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-2"
-                      >
-                        {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                        Send OTP
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                </>
+              );
+            })()}
           </div>
-        )}
 
-        {/* Step 2: OTP Verification */}
-        {step === 2 && (
-          <div className="max-w-md mx-auto mt-8">
+          {/* Booking Summary + Form */}
+          {selectedSlots.length > 0 && (
+            <div className="px-4 mt-5 space-y-3">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
+                  <div>
+                    <div className="text-xs text-gray-400 font-medium">{selectedSlots.length} Slot{selectedSlots.length > 1 ? 's' : ''} Selected</div>
+                    <div className="text-sm font-semibold text-gray-800 mt-0.5">{getSelectedTimings().join(', ')}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">Pay at venue</div>
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">₹{calculateTotal().toLocaleString()}</div>
+                </div>
+                <div className="flex items-center px-4 py-3.5 border-b border-gray-100 gap-3">
+                  <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your full name"
+                    className="flex-1 text-sm text-gray-900 placeholder:text-gray-400 bg-transparent outline-none"
+                  />
+                </div>
+                <div className="flex items-center px-4 py-3.5 gap-3">
+                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <span className="text-sm font-semibold text-gray-500">+91</span>
+                  <div className="w-px h-4 bg-gray-200" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="10-digit mobile number"
+                    maxLength={10}
+                    className="flex-1 text-sm text-gray-900 placeholder:text-gray-400 bg-transparent outline-none"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={sendOTP}
+                disabled={loading || !phone || phone.length !== 10 || !name}
+                className="w-full py-4 bg-gradient-to-r from-[#84cc16] to-[#65a30d] disabled:from-gray-200 disabled:to-gray-200 disabled:cursor-not-allowed text-white disabled:text-gray-400 font-bold rounded-2xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-2 text-base"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                Send OTP →
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {/* Step 2: OTP Verification */}
+      {step === 2 && (
+        <div className="max-w-md mx-auto px-4 mt-8">
             <div className="bg-white rounded-2xl p-8 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
               <div className="w-20 h-20 bg-[#F7FEE7] rounded-full flex items-center justify-center mx-auto mb-6">
                 <Shield className="w-10 h-10 text-[#84cc16]" />
@@ -593,9 +561,9 @@ const Booking = () => {
           </div>
         )}
 
-        {/* Step 3: Success */}
-        {step === 3 && (
-          <div className="max-w-md mx-auto mt-8">
+      {/* Step 3: Success */}
+      {step === 3 && (
+        <div className="max-w-md mx-auto px-4 mt-8">
             <div className="bg-white rounded-2xl p-8 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
               <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8">
                 <Check className="w-12 h-12 text-green-500" />
@@ -606,6 +574,14 @@ const Booking = () => {
               <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 mb-8 text-left">
                 <h3 className="text-lg font-bold mb-6 pb-4 border-b border-gray-200 text-gray-900">Booking Details</h3>
                 <div className="space-y-4 text-gray-600">
+                  <div className="flex justify-between items-center">
+                    <span>Name</span>
+                    <span className="font-semibold text-gray-900">{name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Phone</span>
+                    <span className="font-semibold text-gray-900">+91 {phone}</span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span>Sport</span>
                     <span className="font-semibold text-gray-900">{sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football (7s)' : 'Football (11s)'}</span>
@@ -629,7 +605,12 @@ const Booking = () => {
                   </div>
                 </div>
               </div>
-              
+
+              <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3.5 mb-6 text-left">
+                <span className="text-blue-400 text-lg leading-none mt-0.5">📞</span>
+                <p className="text-sm text-blue-700 font-medium">We will call you to confirm your appointment. Please keep your phone reachable.</p>
+              </div>
+
               <Link to="/">
                 <button className="w-full px-6 py-4 bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 text-lg">
                   Return to Home
@@ -638,9 +619,7 @@ const Booking = () => {
             </div>
           </div>
         )}
-      </div>
-      
-      {/* CSS to hide scrollbar for horizontal date picker */}
+
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;

@@ -49,10 +49,10 @@ const Footer = () => {
                 <Link to="/booking" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">Book a Slot</Link>
               </li>
               <li>
-                <a href="/#about" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">About Us</a>
+                <a href="/#features" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">Features</a>
               </li>
               <li>
-                <a href="/#features" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">Features</a>
+                <a href="/#services" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">Services</a>
               </li>
             </ul>
           </div>

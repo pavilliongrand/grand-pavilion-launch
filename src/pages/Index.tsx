@@ -1,5 +1,4 @@
 import Hero from "@/components/Hero";
-import { About } from "@/components/About";
 import { Services } from "@/components/Services";
 import Features from "@/components/Features";
 import LocationMap from "@/components/LocationMap";
@@ -11,7 +10,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
       <Hero />
-      <About />
       <Services />
       <Features />
       

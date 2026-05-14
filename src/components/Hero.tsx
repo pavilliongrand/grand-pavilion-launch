@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -22,23 +22,18 @@ const Hero = () => {
       <div className="container relative z-10 h-full flex flex-col justify-end md:justify-center pb-24 md:pb-0 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl space-y-8 animate-fade-in">
 
-          {/* Logo + brand name on one line */}
-          <div className="flex items-center gap-4 sm:gap-6">
+          {/* Logo + Sports Turf tag */}
+          <div className="flex items-center gap-4 sm:gap-5">
             <Link to="/" className="flex-shrink-0 hover:scale-105 transition-transform duration-300">
               <img
                 src="/logo-transparent.png"
                 alt="Grand Pavilion Sports Turf"
-                className="h-14 sm:h-20 md:h-24 lg:h-28 w-auto object-contain"
+                className="h-28 sm:h-36 md:h-44 lg:h-52 w-auto object-contain"
               />
             </Link>
-            <div className="flex flex-col leading-none">
-              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 tracking-tight">
-                Grand Pavilion
-              </span>
-              <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-[#84cc16] uppercase tracking-[0.25em] mt-1">
-                Sports Turf
-              </span>
-            </div>
+            <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-[#84cc16] uppercase tracking-[0.2em]">
+              Sports Turf
+            </span>
           </div>
 
           {/* Subheading */}
@@ -58,16 +53,6 @@ const Hero = () => {
                 Reserve Your Slot
               </Button>
             </Link>
-            <a href="#about">
-              <Button
-                size="lg"
-                variant="outline"
-                className="bg-transparent text-gray-700 border-2 border-gray-200 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300 font-bold px-10 h-16 rounded-xl text-lg transition-all duration-300 hover:scale-105"
-              >
-                View Facilities
-                <ArrowRight className="ml-2 h-6 w-6" />
-              </Button>
-            </a>
           </div>
         </div>
       </div>
