@@ -42,7 +42,8 @@ const Booking = () => {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   
   const [sport, setSport] = useState<"cricket" | "football-7s" | "football-11s">("cricket");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  // Use IST date for initial value — toISOString() gives UTC which is wrong for users after midnight IST
+  const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }));
   const [selectedSlots, setSelectedSlots] = useState<Array<{slotId: string}>>([]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -114,19 +115,19 @@ const Booking = () => {
 
   const generateMockSlots = (date: string, sport: string) => {
     const slots = [];
-    for (let hour = 0; hour < 24; hour++) {
-      const isPeak = hour >= 18 && hour <= 22;
+    // Only generate working hours (6 AM – 11 PM = 17 slots)
+    for (let hour = 6; hour < 23; hour++) {
+      const isPeak = hour >= 18;
       const cricketPrice = isPeak ? 1950 : 1500;
       const footballPrice = isPeak ? 1300 : 1000;
-      
       const nextHour = hour + 1;
 
       slots.push({
         id: `${hour}-${nextHour}`,
-        time: `${String(hour).padStart(2, '0')}:00 - ${String(nextHour === 24 ? 0 : nextHour).padStart(2, '0')}:00`,
+        time: `${String(hour).padStart(2, '0')}:00 - ${String(nextHour).padStart(2, '0')}:00`,
         startHour: hour,
         endHour: nextHour,
-        available: Math.random() > 0.3, // Randomly make some booked for realism
+        available: Math.random() > 0.3,
         price: sport === 'cricket' ? cricketPrice : footballPrice
       });
     }
@@ -259,7 +260,7 @@ const Booking = () => {
   };
 
   const next7Days = getNext7Days();
-  const getTodayDateStr = () => new Date().toISOString().split('T')[0];
+  const getTodayDateStr = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
   const formatDateDisplay = (d: Date, index: number) => {
     if (index === 0) return "Today";
@@ -283,7 +284,7 @@ const Booking = () => {
             <img 
               src="/logo-transparent.png" 
               alt="Grand Pavilion" 
-              className="h-24 sm:h-32 md:h-40 w-auto object-contain"
+              className="h-16 sm:h-24 md:h-32 w-auto object-contain"
             />
           </Link>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
@@ -305,8 +306,7 @@ const Booking = () => {
             
             {/* Pick a Date */}
             <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-gray-900">Pick a Date</h2>
+              <div className="flex justify-end items-center mb-4">
                 <button 
                   onClick={() => dateInputRef.current?.showPicker()} 
                   className="p-2 bg-gray-50 rounded-full hover:bg-gray-100 transition-colors text-green-600"
@@ -329,7 +329,7 @@ const Booking = () => {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
                 {next7Days.map((d, i) => {
-                  const dateStr = d.toISOString().split('T')[0];
+                  const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
                   const isSelected = date === dateStr;
                   return (
                     <button
@@ -355,8 +355,7 @@ const Booking = () => {
 
             {/* Select Sport */}
             <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Select Sport</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {[
                   { value: "cricket", label: "Cricket" },
                   { value: "football-7s", label: "Football (7s)" },
@@ -371,7 +370,7 @@ const Booking = () => {
                         : 'border-gray-100 bg-white hover:border-gray-200'
                     }`}
                   >
-                    <div className="font-bold text-gray-900">{s.label}</div>
+                    <div className="font-bold text-gray-900 text-xs sm:text-sm leading-tight">{s.label}</div>
                     {sport === s.value && (
                       <div className="w-5 h-5 bg-[#A3E635] rounded-full flex items-center justify-center">
                         <Check className="w-3 h-3 text-[#1A2E05]" strokeWidth={3} />
@@ -387,18 +386,19 @@ const Booking = () => {
             {/* Available Time Slots */}
             {date && (
               <div className="bg-white rounded-2xl p-4 sm:p-5 md:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">Pick a Slot</h2>
-                  {(() => {
+                {(() => {
                     const d = new Date(date);
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                     const isFridayToday = new Date().getDay() === 5;
                     if (isWeekend && !isFridayToday) {
-                      return <span className="text-xs font-semibold text-red-500 bg-red-50 px-2 py-1 rounded">Weekends only available on Fridays</span>;
+                      return (
+                        <div className="flex justify-end items-center mb-4">
+                          <span className="text-xs font-semibold text-red-500 bg-red-50 px-2 py-1 rounded">Weekends only available on Fridays</span>
+                        </div>
+                      );
                     }
                     return null;
                   })()}
-                </div>
 
                 {loading ? (
                   <div className="flex justify-center py-12">
@@ -442,7 +442,7 @@ const Booking = () => {
                           key={slot.id}
                           onClick={() => slot.available && toggleSlot(slot.id)}
                           disabled={!slot.available}
-                          className={`relative p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl border-2 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[70px] sm:min-h-[80px] ${
+                          className={`relative p-1.5 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl border-2 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[64px] sm:min-h-[80px] ${
                             isSelected
                               ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d] border-transparent text-white shadow-md'
                               : slot.available
@@ -456,11 +456,13 @@ const Booking = () => {
                               <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300" strokeWidth={3} />
                             </div>
                           )}
-                          <div className={`font-semibold text-xs sm:text-sm whitespace-nowrap flex items-center gap-1 ${
+                          <div className={`font-semibold flex flex-col items-center gap-0.5 ${
                             !slot.available ? 'opacity-40' : 'opacity-100'
                           }`}>
-                            {slot.startHour >= 18 ? <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
-                            <span className="truncate">{formatTime12Hour(slot.time)}</span>
+                            {(slot.startHour >= 18 || slot.startHour < 6) ? <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+                            <span className="text-[9px] sm:text-[11px] leading-tight text-center">
+                              {formatTime12Hour(slot.time).replace(' - ', '\n')}
+                            </span>
                           </div>
                           {isSelected && (
                             <div className="text-[11px] sm:text-[10px] font-bold opacity-90 mt-1">₹{slot.price}</div>
@@ -606,7 +608,7 @@ const Booking = () => {
                 <div className="space-y-4 text-gray-600">
                   <div className="flex justify-between items-center">
                     <span>Sport</span>
-                    <span className="font-semibold text-gray-900 capitalize">{sport}</span>
+                    <span className="font-semibold text-gray-900">{sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football (7s)' : 'Football (11s)'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Date</span>
@@ -619,7 +621,11 @@ const Booking = () => {
                     </div>
                   </div>
                   <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm text-center text-gray-500">Payment: Cash at venue</p>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-gray-700">Total Amount</span>
+                      <span className="text-2xl font-bold text-[#84cc16]">₹{calculateTotal()}</span>
+                    </div>
+                    <p className="text-sm font-semibold text-center text-gray-500 bg-gray-50 py-2 rounded-lg">Pay at venue</p>
                   </div>
                 </div>
               </div>

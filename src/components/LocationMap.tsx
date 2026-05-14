@@ -20,7 +20,7 @@ const LocationMap = () => {
 
             <div className="space-y-6 pt-4">
               <a
-                href="https://maps.app.goo.gl/A6USjUjBrMueXuZJ6"
+                href="https://share.google/movf7qAUVXIpgCGzu"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-4 group"
@@ -81,7 +81,7 @@ const LocationMap = () => {
           <div className="h-[400px] lg:h-[500px] w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative group">
             <div className="absolute inset-0 bg-[#A3E635]/5 pointer-events-none group-hover:bg-transparent transition-colors duration-500 z-10" />
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.284747134277!2d76.6548!3d10.7867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTDCsDQ3JzEyLjEiTiA3NsKwMzknMTcuMyJF!5e0!3m2!1sen!2sin!4v1635765432109!5m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919!2d76.2274075!3d10.8192527!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7c5dcbf903af9%3A0xee60446b9c4e6e65!2sGrand%20Pavilion%20Sports%20Turf!5e0!3m2!1sen!2sin!4v1747224000000!5m2!1sen!2sin"
               width="100%"
               height="100%"
               style={{ border: 0 }}

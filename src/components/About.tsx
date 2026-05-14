@@ -1,4 +1,3 @@
-import { Trophy, Users, Clock, Star } from "lucide-react";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 

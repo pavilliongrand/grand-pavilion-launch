@@ -17,7 +17,7 @@ const db = getFirestore();
 
 const DEFAULT_PRICING = {
   workingHours: { start: 0, end: 24 },
-  sportAvailability: { cricket: true, football: true },
+  sportAvailability: { cricket: true, football7s: true, football11s: true },
   dayNightCutoffHour: 18,
   rates: {
     cricketDay: 1000,
@@ -66,12 +66,12 @@ export async function savePricingConfig(data: {
   };
   dayNightCutoffHour?: number;
   workingHours?: { start: number; end: number };
-  sportAvailability?: { cricket: boolean; football: boolean };
+  sportAvailability?: { cricket: boolean; football7s: boolean; football11s: boolean };
 }) {
   try {
     const pricingData = {
       workingHours: data.workingHours || { start: 0, end: 24 },
-      sportAvailability: data.sportAvailability || { cricket: true, football: true },
+      sportAvailability: data.sportAvailability || { cricket: true, football7s: true, football11s: true },
       dayNightCutoffHour: data.dayNightCutoffHour || 18,
       rates: data.rates,
       lastUpdated: new Date().toISOString(),

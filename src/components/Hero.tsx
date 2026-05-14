@@ -19,23 +19,27 @@ const Hero = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-[#F5F7FA] via-[#F5F7FA]/80 md:via-transparent to-transparent" />
       </div>
 
-      {/* Top Logo */}
-      <div className="absolute top-6 left-6 sm:top-8 sm:left-8 lg:left-12 z-20">
-        <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300">
-          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-12 sm:h-16 w-auto object-contain" />
-        </Link>
-      </div>
-
       <div className="container relative z-10 h-full flex flex-col justify-end md:justify-center pb-24 md:pb-0 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl space-y-8 animate-fade-in">
 
-          {/* Main Heading */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight font-heading leading-tight">
-            GRAND PAVILION <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#84cc16] to-[#65a30d]">
-              SPORTS TURF
-            </span>
-          </h1>
+          {/* Logo + brand name on one line */}
+          <div className="flex items-center gap-4 sm:gap-6">
+            <Link to="/" className="flex-shrink-0 hover:scale-105 transition-transform duration-300">
+              <img
+                src="/logo-transparent.png"
+                alt="Grand Pavilion Sports Turf"
+                className="h-14 sm:h-20 md:h-24 lg:h-28 w-auto object-contain"
+              />
+            </Link>
+            <div className="flex flex-col leading-none">
+              <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 tracking-tight">
+                Grand Pavilion
+              </span>
+              <span className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-[#84cc16] uppercase tracking-[0.25em] mt-1">
+                Sports Turf
+              </span>
+            </div>
+          </div>
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl md:text-2xl text-gray-600 max-w-2xl font-light leading-relaxed">

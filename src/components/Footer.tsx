@@ -1,4 +1,5 @@
 import { Instagram, Mail, MapPin, Phone, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -45,7 +46,7 @@ const Footer = () => {
             <h4 className="text-gray-900 font-semibold mb-4 uppercase text-sm tracking-wider">Quick Links</h4>
             <ul className="space-y-3">
               <li>
-                <a href="/booking" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">Book a Slot</a>
+                <Link to="/booking" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">Book a Slot</Link>
               </li>
               <li>
                 <a href="/#about" className="text-gray-600 hover:text-[#65a30d] transition-colors text-sm">About Us</a>

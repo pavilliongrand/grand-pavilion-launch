@@ -33,17 +33,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const bookings = events
         .filter((event: any) => event.extendedProperties?.private?.blocked !== 'true')
         .map((event: any) => {
-          // Use IST-safe hour extraction
+          // Use IST-safe hour and date extraction (Vercel runs UTC, bookings are in IST)
           const startDt = event.start?.dateTime ? new Date(event.start.dateTime) : null;
           const endDt = event.end?.dateTime ? new Date(event.end.dateTime) : null;
           const startHourIST = startDt ? new Date(startDt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getHours() : 0;
           const endHourIST = endDt ? new Date(endDt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).getHours() : 0;
+          const startISTDate = startDt ? new Date(startDt.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })) : null;
+          const dateStr = startISTDate
+            ? `${startISTDate.getFullYear()}-${String(startISTDate.getMonth() + 1).padStart(2, '0')}-${String(startISTDate.getDate()).padStart(2, '0')}`
+            : '';
 
           return {
             id: event.id,
             name: event.extendedProperties?.private?.name || 'Unknown',
             sport: event.extendedProperties?.private?.sport || 'unknown',
-            date: event.start?.dateTime?.split('T')[0] || '',
+            date: dateStr,
             slots: [event.extendedProperties?.private?.slotId || ''],
             slotTimes: [`${startHourIST}:00 - ${endHourIST}:00`],
             phone: event.extendedProperties?.private?.phone || '',

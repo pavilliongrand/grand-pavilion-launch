@@ -110,7 +110,7 @@ const Admin = () => {
   });
   const [dayNightCutoffHour, setDayNightCutoffHour] = useState(18);
   const [workingHours, setWorkingHours] = useState<WorkingHours>({ start: 0, end: 24 });
-  const [sportAvailability, setSportAvailability] = useState({ cricket: true, football: true });
+  const [sportAvailability, setSportAvailability] = useState({ cricket: true, football7s: true, football11s: true });
 
   // Get signed admin token from session for API authentication
   const getAdminToken = () => {
@@ -216,7 +216,13 @@ const Admin = () => {
         setWorkingHours(data.workingHours);
       }
       if (data.sportAvailability) {
-        setSportAvailability(data.sportAvailability);
+        // Migrate old schema: if only 'football' key exists, fan out to football7s + football11s
+        const sa = data.sportAvailability;
+        setSportAvailability({
+          cricket: sa.cricket ?? true,
+          football7s: sa.football7s ?? sa.football ?? true,
+          football11s: sa.football11s ?? sa.football ?? true,
+        });
       }
     } catch (err) {
       console.error('Failed to fetch pricing:', err);
@@ -611,7 +617,7 @@ const Admin = () => {
                 Sport Availability
               </h3>
               <p className="text-sm text-gray-600 mb-4">Enable or disable bookings for specific sports</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-white rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
@@ -642,27 +648,54 @@ const Admin = () => {
                 <div className="p-4 bg-white rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football</h4>
-                      <p className="text-xs text-gray-500">Allow football bookings</p>
+                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football (7s)</h4>
+                      <p className="text-xs text-gray-500">Allow 7-a-side bookings</p>
                     </div>
                     <button
-                      onClick={() => setSportAvailability(prev => ({ ...prev, football: !prev.football }))}
+                      onClick={() => setSportAvailability(prev => ({ ...prev, football7s: !prev.football7s }))}
                       className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                        sportAvailability.football ? 'bg-green-500' : 'bg-zinc-600'
+                        sportAvailability.football7s ? 'bg-green-500' : 'bg-zinc-600'
                       }`}
                     >
                       <span
                         className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                          sportAvailability.football ? 'translate-x-7' : 'translate-x-1'
+                          sportAvailability.football7s ? 'translate-x-7' : 'translate-x-1'
                         }`}
                       />
                     </button>
                   </div>
                   <div className="mt-3 text-xs">
                     <span className={`font-semibold ${
-                      sportAvailability.football ? 'text-green-600' : 'text-red-600'
+                      sportAvailability.football7s ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {sportAvailability.football ? '✓ Enabled' : '✗ Disabled'}
+                      {sportAvailability.football7s ? '✓ Enabled' : '✗ Disabled'}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football (11s)</h4>
+                      <p className="text-xs text-gray-500">Allow 11-a-side bookings</p>
+                    </div>
+                    <button
+                      onClick={() => setSportAvailability(prev => ({ ...prev, football11s: !prev.football11s }))}
+                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                        sportAvailability.football11s ? 'bg-green-500' : 'bg-zinc-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                          sportAvailability.football11s ? 'translate-x-7' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="mt-3 text-xs">
+                    <span className={`font-semibold ${
+                      sportAvailability.football11s ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {sportAvailability.football11s ? '✓ Enabled' : '✗ Disabled'}
                     </span>
                   </div>
                 </div>

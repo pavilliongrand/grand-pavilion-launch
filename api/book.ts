@@ -36,7 +36,7 @@ function calculateServerPrice(
   let total = 0;
   for (const slotId of slotIds) {
     const [startHour] = slotId.split('-').map(Number);
-    const isNight = startHour >= cutoff;
+    const isNight = startHour >= cutoff || startHour < 6; // Night: after cutoff (6 PM) OR before 6 AM
 
     if (sport === 'cricket') {
       total += isNight ? rates.cricketNight : rates.cricketDay;
@@ -91,21 +91,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // ── 3. Validate date is not in the past ────────────────
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const bookingDate = new Date(payload.date + 'T00:00:00+05:30');
-    if (bookingDate < today) {
+    // ── 3. Validate date is not in the past (IST-aware: Vercel runs UTC) ─────────────────────
+    const istNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const istToday = `${istNow.getFullYear()}-${String(istNow.getMonth() + 1).padStart(2, '0')}-${String(istNow.getDate()).padStart(2, '0')}`;
+    if (payload.date < istToday) {
       return res.status(400).json({ error: 'Cannot book a date in the past' });
     }
 
+    // ── 4 + 6. Fetch pricing config and occupied slots in parallel (saves ~1s toward Vercel 10s limit) ──
+    const [pricingData, occupiedSlots] = await Promise.all([
+      getPricingConfig(),
+      getOccupiedSlotsFromCalendar(payload.date, payload.sport),
+    ]);
+
     // ── 4. Check sport availability ────────────────────────
-    const pricingData = await getPricingConfig();
-    const sportAvailability = pricingData.sportAvailability || { cricket: true, football: true };
-    const baseSport = payload.sport.startsWith('football') ? 'football' : payload.sport;
-    if (!sportAvailability[baseSport]) {
+    const sportAvailability = pricingData.sportAvailability || {};
+    const sportKey = payload.sport === 'cricket' ? 'cricket' : payload.sport === 'football-7s' ? 'football7s' : 'football11s';
+    const sportEnabled = sportAvailability[sportKey] ?? sportAvailability['football'] ?? true;
+    if (!sportEnabled) {
+      const sportLabel = payload.sport === 'cricket' ? 'Cricket' : payload.sport === 'football-7s' ? 'Football 7s' : 'Football 11s';
       return res.status(400).json({
-        error: `${baseSport.charAt(0).toUpperCase() + baseSport.slice(1)} bookings are currently disabled.`,
+        error: `${sportLabel} bookings are currently disabled.`,
       });
     }
 
@@ -116,8 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pricingData
     );
 
-    // ── 6. Double-booking prevention (check-then-act) ──────
-    const occupiedSlots = await getOccupiedSlotsFromCalendar(payload.date, payload.sport);
+    // ── 6. Double-booking prevention (occupiedSlots already fetched above) ──────
     for (const slot of payload.slots) {
       if (occupiedSlots.includes(slot.slotId)) {
         return res.status(409).json({

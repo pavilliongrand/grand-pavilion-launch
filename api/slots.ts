@@ -46,15 +46,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { date, sport } = parsed.data;
 
-    // Read pricing from Firestore
-    const pricingData = await getPricingConfig();
+    // Fetch pricing config and occupied slots in parallel (saves ~1s toward Vercel 10s limit)
+    const [pricingData, occupiedSlots] = await Promise.all([
+      getPricingConfig(),
+      getOccupiedSlotDetailsFromCalendar(date, sport),
+    ]);
+
     const sportAvailability = pricingData.sportAvailability || { cricket: true, football: true };
 
-    // For availability check, treat 7s and 11s as "football"
-    const baseSport = sport.startsWith('football') ? 'football' : sport;
-    if (!sportAvailability[baseSport]) {
+    // Check availability per specific football variant, with backward-compat fallback to legacy 'football' key
+    const sportKey = sport === 'cricket' ? 'cricket' : sport === 'football-7s' ? 'football7s' : 'football11s';
+    const sportEnabled = sportAvailability[sportKey] ?? sportAvailability['football'] ?? true;
+    if (!sportEnabled) {
+      const sportLabel = sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football 7s' : 'Football 11s';
       return res.status(400).json({
-        error: `${baseSport.charAt(0).toUpperCase() + baseSport.slice(1)} bookings are currently disabled.`,
+        error: `${sportLabel} bookings are currently disabled.`,
         disabled: true,
       });
     }
@@ -62,8 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Generate time slots
     const slots = generateSlots(sport, pricingData, date);
 
-    // Fetch occupied slots from Google Calendar
-    const occupiedSlots = await getOccupiedSlotDetailsFromCalendar(date, sport);
+    // occupiedSlots already fetched in parallel above
     const occupiedBySlotId = new Map(occupiedSlots.map((slot) => [slot.slotId, slot]));
 
     // Mark occupied slots as unavailable
@@ -118,7 +123,7 @@ function generateSlots(
 
   for (let hour = 0; hour < 24; hour++) {
     const endHour = hour + 1;
-    const isNight = hour >= cutoff; // Night is after cutoff hour (usually 6 PM)
+    const isNight = hour >= cutoff || hour < 6; // Night: after cutoff (6 PM) OR before 6 AM (lights on)
 
     let price = 1600;
     if (sport === 'cricket') {
