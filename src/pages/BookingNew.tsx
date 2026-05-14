@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar as CalendarIcon, Phone, Check, Loader2, Shield, User, Sun, Moon } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Phone, Check, Loader2, Shield, User, Sun, Lightbulb, X } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 
@@ -95,9 +95,13 @@ const Booking = () => {
   const enforceWeekendRule = (slots: TimeSlot[], targetDateStr: string) => {
     const targetDate = new Date(targetDateStr);
     const dayOfWeek = targetDate.getDay();
-    const todayDayOfWeek = new Date().getDay();
+    const today = new Date();
+    const todayDayOfWeek = today.getDay();
+    const todayDateStr = today.toISOString().split('T')[0];
     
-    // Only allow booking weekend slots (Sat=6, Sun=0) if today is Friday (5)
+    // Weekend slots (Sat=6, Sun=0) only bookable:
+    // - On Friday (today) for this weekend (Sat/Sun)
+    // - On Friday (today) for next week's weekend (next Sat/Sun) which are still within the 7-day window
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     const isFridayToday = todayDayOfWeek === 5;
     const isWeekendAllowed = !isWeekend || isFridayToday;
@@ -387,7 +391,7 @@ const Booking = () => {
 
             {/* Available Time Slots */}
             {date && (
-              <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
+              <div className="bg-white rounded-2xl p-4 sm:p-5 md:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-bold text-gray-900">Pick a Slot</h2>
                   {(() => {
@@ -408,7 +412,7 @@ const Booking = () => {
                 ) : availableSlots.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">No slots available for this date.</div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                     {(() => {
                       // Sort slots so 17:00 (5 PM) starts first, wrapping around
                       const sortedSlots = [...availableSlots].sort((a, b) => {
@@ -422,7 +426,7 @@ const Booking = () => {
                       const isToday = date === getTodayDateStr();
 
                       const visibleSlots = showAllSlots 
-                        ? sortedSlots.filter(s => !isToday || s.startHour > currentHour || s.startHour < 6 /* account for past midnight if needed, but normally startHour>currentHour */)
+                        ? sortedSlots.filter(s => !isToday || s.startHour > currentHour || s.startHour < 6)
                         : sortedSlots.filter(s => {
                             // Hide if past hour today
                             if (isToday && s.startHour <= currentHour && s.startHour >= 6) return false;
@@ -430,6 +434,8 @@ const Booking = () => {
                             // Show slots from 17:00 up to 00:00 (which is startHour 0)
                             return s.startHour >= 17 || s.startHour === 0;
                           });
+
+                      const hiddenSlotsCount = sortedSlots.length - visibleSlots.length;
 
                       return (
                         <>
@@ -441,37 +447,40 @@ const Booking = () => {
                           key={slot.id}
                           onClick={() => slot.available && toggleSlot(slot.id)}
                           disabled={!slot.available}
-                          className={`relative p-2 sm:p-3 rounded-xl border transition-all active:scale-95 flex flex-col items-center justify-center ${
+                          className={`relative p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl border-2 transition-all active:scale-95 flex flex-col items-center justify-center min-h-[70px] sm:min-h-[80px] ${
                             isSelected
                               ? 'bg-gradient-to-r from-[#84cc16] to-[#65a30d] border-transparent text-white shadow-md'
                               : slot.available
-                              ? 'bg-white border-gray-200 text-gray-700 hover:border-[#A3E635]'
-                              : 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
+                              ? 'bg-white border-gray-200 text-gray-700 hover:border-[#A3E635] hover:shadow-sm'
+                              : 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed relative'
                           }`}
                         >
-                          <div className={`font-semibold text-xs sm:text-sm whitespace-nowrap flex items-center gap-1.5 ${!slot.available && 'opacity-60'}`}>
-                            {slot.startHour >= 18 ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
-                            {formatTime12Hour(slot.time)}
+                          {!slot.available && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="absolute w-full h-0.5 bg-gray-300 rounded"></div>
+                              <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300" strokeWidth={3} />
+                            </div>
+                          )}
+                          <div className={`font-semibold text-xs sm:text-sm whitespace-nowrap flex items-center gap-1 ${
+                            !slot.available ? 'opacity-40' : 'opacity-100'
+                          }`}>
+                            {slot.startHour >= 18 ? <Lightbulb className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : <Sun className="w-3 h-3 sm:w-3.5 sm:h-3.5" />}
+                            <span className="truncate">{formatTime12Hour(slot.time)}</span>
                           </div>
                           {isSelected && (
-                            <div className="text-[10px] font-bold opacity-90 mt-1">₹{slot.price}</div>
-                          )}
-                          {!slot.available && (
-                            <div className="text-[10px] font-bold text-red-500 mt-1">BOOKED</div>
+                            <div className="text-[11px] sm:text-[10px] font-bold opacity-90 mt-1">₹{slot.price}</div>
                           )}
                         </button>
                       );
                     })}
                     
-                    {!showAllSlots && sortedSlots.length > 0 && (
+                    {!showAllSlots && hiddenSlotsCount > 0 && (
                       <button 
                         onClick={() => setShowAllSlots(true)}
-                        className="col-span-full mt-2 flex flex-col items-center justify-center p-2 rounded-xl text-[#84cc16] hover:bg-[#A3E635]/10 transition-colors group"
+                        className="col-span-full mt-2 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border-2 border-dashed border-[#84cc16] bg-[#F7FEE7] text-[#84cc16] hover:bg-[#f0fdcc] transition-colors flex flex-col items-center justify-center gap-1 group cursor-pointer text-xs sm:text-sm"
                       >
-                        <span className="text-xs font-semibold uppercase tracking-wider mb-1">Show More Slots</span>
-                        <div className="w-8 h-8 rounded-full bg-[#A3E635]/20 flex items-center justify-center group-hover:bg-[#A3E635]/30 transition-colors">
-                          <span className="text-sm font-bold">▽</span>
-                        </div>
+                        <span className="font-semibold uppercase tracking-wider">Show {hiddenSlotsCount} More</span>
+                        <span className="text-base sm:text-lg transition-transform group-hover:translate-y-1">▼</span>
                       </button>
                     )}
                     </>
@@ -487,9 +496,9 @@ const Booking = () => {
               <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border-2 border-[#A3E635]">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Booking Summary</h3>
                 
-                <div className="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                  <div className="text-xs text-gray-500 font-semibold mb-2 uppercase tracking-wider">Selected Timings</div>
-                  <div className="space-y-1.5">
+                <div className="mb-6 bg-gradient-to-r from-[#F7FEE7] to-[#F5FEE0] rounded-xl p-4 border border-[#A3E635]/30">
+                  <div className="text-xs text-gray-500 font-semibold mb-3 uppercase tracking-wider">Selected Timings</div>
+                  <div className="space-y-1.5 mb-4">
                     {getSelectedTimings().map((timing, idx) => (
                       <div key={idx} className="font-bold text-gray-900 flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#A3E635]" />
@@ -497,9 +506,13 @@ const Booking = () => {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 pt-3 border-t border-gray-200">
-                    <p className="text-sm font-semibold text-gray-600 text-center">
-                      Pay amount at venue
+                  <div className="pt-4 border-t border-[#A3E635]/20">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-gray-600">Total Amount:</span>
+                      <span className="text-2xl font-bold text-[#84cc16]">₹{calculateTotal()}</span>
+                    </div>
+                    <p className="text-xs font-semibold text-gray-500 text-center mt-3">
+                      Pay at venue
                     </p>
                   </div>
                 </div>
