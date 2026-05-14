@@ -136,13 +136,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       for (const slot of payload.slots) {
+        const slotAmount = calculateServerPrice(payload.sport, [slot.slotId], pricingData);
         const eventId = await createCalendarBooking({
           name: payload.name,
           sport: payload.sport,
           date: payload.date,
           slotId: slot.slotId,
           phone: payload.phone,
-          amount: serverAmount / payload.slots.length,
+          amount: slotAmount,
           paymentMethod: payload.paymentMethod,
         });
         createdEventIds.push(eventId);
