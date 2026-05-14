@@ -157,10 +157,15 @@ const Admin = () => {
         },
         body: JSON.stringify({ id: bookingId, status: newStatus })
       });
-      if (!res.ok) throw new Error('Failed to update');
-    } catch (err) {
-      alert('Failed to update status');
-      fetchBookings();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update booking status');
+      }
+      console.log('Booking status updated:', newStatus);
+    } catch (err: any) {
+      console.error('Status update error:', err);
+      alert(`Failed to update status: ${err.message}`);
+      await fetchBookings();
     }
   };
 
@@ -204,20 +209,27 @@ const Admin = () => {
   const savePricing = async () => {
     setSaving(true);
     try {
+      const payload = { rates, dayNightCutoffHour, workingHours, sportAvailability };
+      console.log('Saving pricing:', payload);
+      
       const response = await fetch('/api/pricing', {
         method: 'POST',
         headers: adminHeaders(),
-        body: JSON.stringify({ rates, dayNightCutoffHour, workingHours, sportAvailability })
+        body: JSON.stringify(payload)
       });
       
-      if (response.ok) {
+      const responseData = await response.json().catch(() => ({}));
+      
+      if (response.ok && responseData.success) {
         alert('✅ Pricing and working hours updated successfully!');
         await fetchPricing();
       } else {
-        alert('❌ Failed to save pricing');
+        console.error('Pricing save failed:', responseData);
+        alert(`❌ Failed to save pricing: ${responseData.error || 'Unknown error'}`);
       }
-    } catch (err) {
-      alert('❌ Failed to save pricing');
+    } catch (err: any) {
+      console.error('Pricing save error:', err);
+      alert(`❌ Failed to save pricing: ${err.message || 'Network error'}`);
     } finally {
       setSaving(false);
     }
@@ -231,23 +243,26 @@ const Admin = () => {
         const blockEvent = blockedSlots.find(b => b.date === blockDate && b.sport === sport && b.slotIds.includes(slotId));
         if (blockEvent) {
           setBlockedSlots(prev => prev.filter(b => b.id !== blockEvent.id));
-          await fetch('/api/admin/unblock-slots', {
+          const response = await fetch('/api/admin/unblock-slots', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json', ...adminHeaders() },
             body: JSON.stringify({ eventId: blockEvent.id })
           });
+          if (!response.ok) throw new Error('Failed to unblock slot');
         }
       } else {
-        await fetch('/api/admin/block-slots', {
+        const response = await fetch('/api/admin/block-slots', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...adminHeaders() },
           body: JSON.stringify({ sport, date: blockDate, slotIds: [slotId], reason: blockReason, customerName: blockCustomerName, customerPhone: blockCustomerPhone })
         });
+        if (!response.ok) throw new Error('Failed to block slot');
         await fetchBlockedSlots();
       }
-    } catch (err) {
-      alert('Failed to update slot');
-      fetchBlockedSlots();
+    } catch (err: any) {
+      console.error('Slot block error:', err);
+      alert(`Failed to update slot: ${err.message}`);
+      await fetchBlockedSlots();
     } finally {
       setSaving(false);
     }
@@ -258,15 +273,17 @@ const Admin = () => {
     setSaving(true);
     try {
       const allSlots = Array.from({ length: 24 }, (_, i) => `${i}-${i+1}`);
-      await fetch('/api/admin/block-slots', {
+      const response = await fetch('/api/admin/block-slots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify({ sport, date: blockDate, slotIds: allSlots, reason: blockReason, customerName: blockCustomerName, customerPhone: blockCustomerPhone })
       });
-      alert(`Full day blocked successfully for ${sport}`);
+      if (!response.ok) throw new Error('Failed to block full day');
+      alert(`✅ Full day blocked successfully for ${sport}`);
       await fetchBlockedSlots();
-    } catch (err) {
-      alert('Failed to block full day');
+    } catch (err: any) {
+      console.error('Full day block error:', err);
+      alert(`Failed to block full day: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -282,14 +299,18 @@ const Admin = () => {
         body: JSON.stringify({ eventId })
       });
       
-      if (response.ok) {
-        alert('Slot unblocked successfully!');
-        fetchBlockedSlots();
+      const data = await response.json().catch(() => ({}));
+      
+      if (response.ok && data.success) {
+        alert('✅ Slot unblocked successfully!');
+        await fetchBlockedSlots();
       } else {
-        alert('Failed to unblock slot');
+        console.error('Unblock failed:', data);
+        alert(`Failed to unblock slot: ${data.error || 'Unknown error'}`);
       }
-    } catch (err) {
-      alert('Failed to unblock slots');
+    } catch (err: any) {
+      console.error('Unblock error:', err);
+      alert(`Failed to unblock slots: ${err.message}`);
     }
   };
 
@@ -297,13 +318,22 @@ const Admin = () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     
     try {
-      await fetch(`/api/admin/bookings?id=${bookingId}`, {
+      const response = await fetch(`/api/admin/bookings?id=${bookingId}`, {
         method: 'DELETE',
         headers: adminHeaders()
       });
-      fetchBookings();
-    } catch (err) {
-      alert('Failed to cancel booking');
+      const data = await response.json().catch(() => ({}));
+      
+      if (response.ok && data.success) {
+        alert('✅ Booking cancelled successfully!');
+        await fetchBookings();
+      } else {
+        console.error('Cancel failed:', data);
+        alert(`Failed to cancel booking: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      console.error('Cancel error:', err);
+      alert(`Failed to cancel booking: ${err.message}`);
     }
   };
 
