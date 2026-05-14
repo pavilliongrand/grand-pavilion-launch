@@ -2,7 +2,7 @@ import { MapPin, Mail, Instagram, Phone } from "lucide-react";
 
 const LocationMap = () => {
   return (
-    <section className="py-20 sm:py-32 bg-white text-gray-900">
+    <section className="py-10 sm:py-16 lg:py-24 bg-white text-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Content */}
@@ -14,7 +14,7 @@ const LocationMap = () => {
               <div className="w-24 h-1.5 bg-[#84cc16] rounded-full" />
             </div>
 
-            <p className="text-gray-600 text-lg leading-relaxed max-w-md">
+            <p className="text-gray-600 text-sm sm:text-lg leading-relaxed max-w-md">
               Conveniently located in Palakkad, easily accessible from major routes. Drop by for a game or to check out our facilities.
             </p>
 
@@ -78,7 +78,7 @@ const LocationMap = () => {
           </div>
 
           {/* Map */}
-          <div className="h-[400px] lg:h-[500px] w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative group">
+          <div className="h-[280px] sm:h-[380px] lg:h-[500px] w-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm relative group">
             <div className="absolute inset-0 bg-[#A3E635]/5 pointer-events-none group-hover:bg-transparent transition-colors duration-500 z-10" />
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919!2d76.2274075!3d10.8192527!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ba7c5dcbf903af9%3A0xee60446b9c4e6e65!2sGrand%20Pavilion%20Sports%20Turf!5e0!3m2!1sen!2sin!4v1747224000000!5m2!1sen!2sin"

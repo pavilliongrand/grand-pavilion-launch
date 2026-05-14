@@ -20,7 +20,7 @@ const Hero = () => {
       </div>
 
       <div className="container relative z-10 h-full flex flex-col justify-end md:justify-center pb-24 md:pb-0 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl space-y-8 animate-fade-in">
+        <div className="max-w-4xl space-y-4 sm:space-y-8 animate-fade-in">
 
           {/* Logo + Sports Turf tag */}
           <div className="flex items-center gap-4 sm:gap-5">
@@ -37,13 +37,13 @@ const Hero = () => {
           </div>
 
           {/* Subheading */}
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 max-w-2xl font-light leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-gray-600 max-w-2xl font-light leading-relaxed">
             Premium Cricket & Football Facilities in Palakkad. <br className="hidden sm:block" />
             Experience professional standards where passion meets excellence.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-5 pt-8">
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 sm:pt-8">
             <Link to="/booking">
               <Button
                 size="lg"

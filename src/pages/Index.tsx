@@ -14,7 +14,7 @@ const Index = () => {
       <Features />
       
       {/* Book Now CTA Section */}
-      <section className="relative py-20 sm:py-24 lg:py-32 overflow-hidden bg-white">
+      <section className="relative py-12 sm:py-20 lg:py-32 overflow-hidden bg-white">
         {/* Gradient background with pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#F5F7FA] via-white to-[#F5F7FA]" />
         <div className="absolute inset-0 opacity-[0.02]" 

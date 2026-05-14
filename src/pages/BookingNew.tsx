@@ -533,9 +533,9 @@ const Booking = () => {
       {/* Step 2: OTP Verification */}
       {step === 2 && (
         <div className="max-w-md mx-auto px-4 mt-8">
-            <div className="bg-white rounded-2xl p-8 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-              <div className="w-20 h-20 bg-[#F7FEE7] rounded-full flex items-center justify-center mx-auto mb-6">
-                <Shield className="w-10 h-10 text-[#84cc16]" />
+            <div className="bg-white rounded-2xl p-5 sm:p-8 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#F7FEE7] rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-6">
+                <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-[#84cc16]" />
               </div>
               <h2 className="text-2xl font-bold mb-3 text-gray-900">Verification</h2>
               <p className="text-gray-500 mb-8">Enter the 6-digit code sent to +91 {phone}</p>
@@ -564,14 +564,14 @@ const Booking = () => {
       {/* Step 3: Success */}
       {step === 3 && (
         <div className="max-w-md mx-auto px-4 mt-8">
-            <div className="bg-white rounded-2xl p-8 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
-              <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8">
+            <div className="bg-white rounded-2xl p-5 sm:p-8 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] border border-gray-100">
+              <div className="w-16 h-16 sm:w-24 sm:h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5 sm:mb-8">
                 <Check className="w-12 h-12 text-green-500" />
               </div>
-              <h2 className="text-3xl font-bold mb-4 text-gray-900">Confirmed!</h2>
-              <p className="text-gray-500 mb-8">Your slot has been successfully reserved</p>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-gray-900">Confirmed!</h2>
+              <p className="text-gray-500 mb-5 sm:mb-8">Your slot has been successfully reserved</p>
               
-              <div className="bg-gray-50 border border-gray-100 rounded-xl p-6 mb-8 text-left">
+              <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 sm:p-6 mb-5 sm:mb-8 text-left">
                 <h3 className="text-lg font-bold mb-6 pb-4 border-b border-gray-200 text-gray-900">Booking Details</h3>
                 <div className="space-y-4 text-gray-600">
                   <div className="flex justify-between items-center">
