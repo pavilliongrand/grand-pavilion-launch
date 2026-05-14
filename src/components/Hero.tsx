@@ -22,7 +22,7 @@ const Hero = () => {
       {/* Top Logo */}
       <div className="absolute top-6 left-6 sm:top-8 sm:left-8 lg:left-12 z-20">
         <Link to="/" className="inline-block hover:scale-105 transition-transform duration-300">
-          <img src="/client-logo.jpg" alt="Grand Pavilion" className="h-12 sm:h-16 w-auto object-contain drop-shadow-md" />
+          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-12 sm:h-16 w-auto object-contain" />
         </Link>
       </div>
 

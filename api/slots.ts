@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { getOccupiedSlotsFromCalendar } from './lib/calendarService.js';
+import { getOccupiedSlotDetailsFromCalendar } from './lib/calendarService.js';
 import { getPricingConfig } from './lib/firestore.js';
 import { applyCors } from './lib/cors.js';
 
@@ -11,6 +11,7 @@ interface TimeSlot {
   endHour: number;
   available: boolean;
   price: number;
+  unavailableReason?: string;
 }
 
 const QuerySchema = z.object({
@@ -62,12 +63,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const slots = generateSlots(sport, pricingData, date);
 
     // Fetch occupied slots from Google Calendar
-    const occupiedSlots = await getOccupiedSlotsFromCalendar(date, sport);
+    const occupiedSlots = await getOccupiedSlotDetailsFromCalendar(date, sport);
+    const occupiedBySlotId = new Map(occupiedSlots.map((slot) => [slot.slotId, slot]));
 
     // Mark occupied slots as unavailable
     const availableSlots = slots.map((slot) => ({
       ...slot,
-      available: slot.available && !occupiedSlots.includes(slot.id),
+      available: slot.available && !occupiedBySlotId.has(slot.id),
+      unavailableReason: occupiedBySlotId.get(slot.id)?.reason,
     }));
 
     return res.status(200).json({ slots: availableSlots });
@@ -84,7 +87,12 @@ function generateSlots(
 ): TimeSlot[] {
   const slots: TimeSlot[] = [];
 
-  const hourlyPricing = pricingData.hourlyPricing || [];
+  const rates = pricingData.rates || {
+    cricketDay: 1000, cricketNight: 1600,
+    football7sDay: 1000, football7sNight: 1600,
+    football11sDay: 1000, football11sNight: 1600
+  };
+  const cutoff = pricingData.dayNightCutoffHour || 18;
   const workingHours = pricingData.workingHours || { start: 6, end: 24 };
 
   // Weekend Restriction Logic
@@ -97,6 +105,10 @@ function generateSlots(
   const isFridayToday = todayDayOfWeek === 5;
   isWeekendAllowed = !isWeekend || isFridayToday;
 
+  const istDateStr = istTime.getFullYear() + '-' + String(istTime.getMonth() + 1).padStart(2, '0') + '-' + String(istTime.getDate()).padStart(2, '0');
+  const isToday = targetDateStr === istDateStr;
+  const currentHour = istTime.getHours();
+
   const formatAMPM = (h: number) => {
     const ampm = h >= 12 && h < 24 ? 'PM' : 'AM';
     let hour12 = h % 12;
@@ -106,23 +118,30 @@ function generateSlots(
 
   for (let hour = 0; hour < 24; hour++) {
     const endHour = hour + 1;
-    const priceRule = hourlyPricing.find((p: any) => p.hour === hour);
+    const isNight = hour >= cutoff; // Night is after cutoff hour (usually 6 PM)
 
-    const price =
-      sport === 'cricket'
-        ? priceRule?.cricketPrice || 1600
-        : sport === 'football-11s'
-          ? priceRule?.football11sPrice || 2200
-          : priceRule?.football7sPrice || priceRule?.footballPrice || 1600;
+    let price = 1600;
+    if (sport === 'cricket') {
+      price = isNight ? rates.cricketNight : rates.cricketDay;
+    } else if (sport === 'football-11s') {
+      price = isNight ? rates.football11sNight : rates.football11sDay;
+    } else {
+      price = isNight ? rates.football7sNight : rates.football7sDay;
+    }
 
+    const isPastHour = isToday && hour <= currentHour;
     const isWithinWorkingHours = hour >= workingHours.start && hour < workingHours.end;
+
+    if (isPastHour) {
+      continue;
+    }
 
     slots.push({
       id: `${hour}-${endHour}`,
       time: `${formatAMPM(hour)} - ${formatAMPM(endHour)}`,
       startHour: hour,
       endHour: endHour,
-      available: isWeekendAllowed && isWithinWorkingHours,
+      available: isWeekendAllowed && isWithinWorkingHours && !isPastHour,
       price: price,
     });
   }

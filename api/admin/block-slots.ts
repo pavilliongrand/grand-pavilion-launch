@@ -12,6 +12,8 @@ interface BlockSlotRequest {
   date: string;
   slotIds: string[];
   reason: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -33,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { sport, date, slotIds, reason }: BlockSlotRequest = req.body;
+    const { sport, date, slotIds, reason, customerName, customerPhone }: BlockSlotRequest = req.body;
 
     if (!sport || !date || !slotIds || slotIds.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -52,18 +54,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const [startHour] = slotId.split('-').map(Number);
       const endHour = startHour + 1;
       const startTime = new Date(`${date}T${String(startHour).padStart(2, '0')}:00:00+05:30`);
-      const endTime = new Date(`${date}T${String(endHour === 24 ? 0 : endHour).padStart(2, '0')}:00:00+05:30`);
-      if (endHour === 24) {
-        endTime.setDate(endTime.getDate() + 1);
-      }
+      const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Accurately adds 1 hour regardless of timezone
 
       const event = {
         summary: `BLOCKED - ${sport.toUpperCase()}`,
-        description: `🚫 Reason: ${reason}\n🏏 Sport: ${sport}\n⏰ Time: ${startHour}:00 - ${startHour + 1}:00`,
+        description: `🚫 Reason: ${reason}\n🏏 Sport: ${sport}\n⏰ Time: ${startHour}:00 - ${startHour + 1}:00\n👤 Customer: ${customerName || 'N/A'}\n📞 Phone: ${customerPhone || 'N/A'}`,
         start: { dateTime: startTime.toISOString(), timeZone: 'Asia/Kolkata' },
         end: { dateTime: endTime.toISOString(), timeZone: 'Asia/Kolkata' },
         extendedProperties: {
-          private: { blocked: 'true', sport, slotId, reason },
+          private: { 
+            blocked: 'true', 
+            sport, 
+            slotId, 
+            reason,
+            customerName: customerName || '',
+            customerPhone: customerPhone || ''
+          },
         },
         colorId: '11',
       };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar as CalendarIcon, Phone, Check, Loader2, Shield, User } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Phone, Check, Loader2, Shield, User, Sun, Moon } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 
@@ -382,11 +382,7 @@ const Booking = () => {
                 ))}
               </div>
               
-              <div className="mt-5 pt-4 border-t border-gray-100 text-sm text-gray-600 space-y-1.5 text-center font-semibold bg-gray-50 rounded-xl py-3">
-                <div>Cricket - 1600/hr</div>
-                <div>7-a-side - 1600/hr</div>
-                <div>11-a-side - ₹2200/hr</div>
-              </div>
+
             </div>
 
             {/* Available Time Slots */}
@@ -421,9 +417,16 @@ const Booking = () => {
                       });
 
                       // Visible slots logic
+                      const now = new Date();
+                      const currentHour = now.getHours();
+                      const isToday = date === getTodayDateStr();
+
                       const visibleSlots = showAllSlots 
-                        ? sortedSlots 
+                        ? sortedSlots.filter(s => !isToday || s.startHour > currentHour || s.startHour < 6 /* account for past midnight if needed, but normally startHour>currentHour */)
                         : sortedSlots.filter(s => {
+                            // Hide if past hour today
+                            if (isToday && s.startHour <= currentHour && s.startHour >= 6) return false;
+                            
                             // Show slots from 17:00 up to 00:00 (which is startHour 0)
                             return s.startHour >= 17 || s.startHour === 0;
                           });
@@ -446,9 +449,16 @@ const Booking = () => {
                               : 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
                           }`}
                         >
-                          <div className={`font-semibold text-xs sm:text-sm whitespace-nowrap ${!slot.available && 'opacity-60'}`}>
+                          <div className={`font-semibold text-xs sm:text-sm whitespace-nowrap flex items-center gap-1.5 ${!slot.available && 'opacity-60'}`}>
+                            {slot.startHour >= 18 ? <Moon className="w-3 h-3" /> : <Sun className="w-3 h-3" />}
                             {formatTime12Hour(slot.time)}
                           </div>
+                          {isSelected && (
+                            <div className="text-[10px] font-bold opacity-90 mt-1">₹{slot.price}</div>
+                          )}
+                          {!slot.available && (
+                            <div className="text-[10px] font-bold text-red-500 mt-1">BOOKED</div>
+                          )}
                         </button>
                       );
                     })}
@@ -486,6 +496,11 @@ const Booking = () => {
                         {timing}
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <p className="text-sm font-semibold text-gray-600 text-center">
+                      Pay amount at venue
+                    </p>
                   </div>
                 </div>
                 

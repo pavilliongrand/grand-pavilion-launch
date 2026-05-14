@@ -24,13 +24,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(401).json({ error: authError.message || 'Unauthorized' });
       }
 
-      const { hourlyPricing, workingHours, sportAvailability } = req.body;
+      const { rates, dayNightCutoffHour, workingHours, sportAvailability } = req.body;
 
-      if (!hourlyPricing || !Array.isArray(hourlyPricing)) {
+      if (!rates) {
         return res.status(400).json({ error: 'Invalid pricing data' });
       }
 
-      const result = await savePricingConfig({ hourlyPricing, workingHours, sportAvailability });
+      const result = await savePricingConfig({ rates, dayNightCutoffHour, workingHours, sportAvailability });
 
       return res.status(200).json({
         success: true,

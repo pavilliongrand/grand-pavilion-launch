@@ -43,7 +43,7 @@ const Index = () => {
           <Link to="/booking">
             <button className="group bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white font-bold py-5 px-12 sm:py-6 sm:px-16 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#84cc16]/30 flex items-center justify-center gap-3 mx-auto text-lg sm:text-xl">
               <Calendar className="w-6 h-6 sm:w-7 sm:h-7" />
-              Reserve Your Turf Now
+              Reserve Your Slot
             </button>
           </Link>
         </div>

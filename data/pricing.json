@@ -1,6 +1,6 @@
 {
   "workingHours": {
-    "start": 11,
+    "start": 6,
     "end": 24
   },
   "sportAvailability": {
@@ -8,126 +8,30 @@
     "football": true
   },
   "hourlyPricing": [
-    {
-      "hour": 0,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 1,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 2,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 3,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 4,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 5,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 6,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 7,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 8,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 9,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 10,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 11,
-      "cricketPrice": 1700,
-      "footballPrice": 1400
-    },
-    {
-      "hour": 12,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 13,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 14,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 15,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 16,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 17,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 18,
-      "cricketPrice": 1950,
-      "footballPrice": 1300
-    },
-    {
-      "hour": 19,
-      "cricketPrice": 1950,
-      "footballPrice": 1300
-    },
-    {
-      "hour": 20,
-      "cricketPrice": 1950,
-      "footballPrice": 1300
-    },
-    {
-      "hour": 21,
-      "cricketPrice": 1950,
-      "footballPrice": 1300
-    },
-    {
-      "hour": 22,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    },
-    {
-      "hour": 23,
-      "cricketPrice": 1500,
-      "footballPrice": 1000
-    }
+    { "hour": 0, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 1, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 2, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 3, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 4, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 5, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 6, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 7, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 8, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 9, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 10, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 11, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 12, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 13, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 14, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 15, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 16, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 17, "cricketPrice": 1600, "football7sPrice": 1600, "football11sPrice": 2200 },
+    { "hour": 18, "cricketPrice": 1950, "football7sPrice": 1950, "football11sPrice": 2600 },
+    { "hour": 19, "cricketPrice": 1950, "football7sPrice": 1950, "football11sPrice": 2600 },
+    { "hour": 20, "cricketPrice": 1950, "football7sPrice": 1950, "football11sPrice": 2600 },
+    { "hour": 21, "cricketPrice": 1950, "football7sPrice": 1950, "football11sPrice": 2600 },
+    { "hour": 22, "cricketPrice": 1950, "football7sPrice": 1950, "football11sPrice": 2600 },
+    { "hour": 23, "cricketPrice": 1950, "football7sPrice": 1950, "football11sPrice": 2600 }
   ],
-  "lastUpdated": "2025-12-07T09:36:20.204Z"
+  "lastUpdated": "2026-05-14T00:00:00.000Z"
 }

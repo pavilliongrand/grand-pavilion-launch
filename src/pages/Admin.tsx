@@ -16,7 +16,9 @@ import {
   Unlock,
   LogOut,
   Ban,
-  Plus
+  Plus,
+  XCircle,
+  CheckCircle
 } from "lucide-react";
 
 interface Booking {
@@ -51,11 +53,13 @@ interface BlockedSlot {
   createdAt: string;
 }
 
-interface PricingRule {
-  hour: number;
-  cricketPrice: number;
-  football7sPrice: number;
-  football11sPrice: number;
+interface Rates {
+  cricketDay: number;
+  cricketNight: number;
+  football7sDay: number;
+  football7sNight: number;
+  football11sDay: number;
+  football11sNight: number;
 }
 
 interface WorkingHours {
@@ -81,17 +85,18 @@ const Admin = () => {
   
   // Slot Management
   const [blockDate, setBlockDate] = useState("");
+  const [blockReason, setBlockReason] = useState("Tournament");
+  const [blockCustomerName, setBlockCustomerName] = useState("");
+  const [blockCustomerPhone, setBlockCustomerPhone] = useState("");
   
-  // Hourly pricing (24 hours)
-  const [pricingRules, setPricingRules] = useState<PricingRule[]>(
-    Array.from({ length: 24 }, (_, i) => ({
-      hour: i,
-      cricketPrice: i >= 18 && i < 22 ? 1950 : 1600,
-      football7sPrice: i >= 18 && i < 22 ? 1950 : 1600,
-      football11sPrice: i >= 18 && i < 22 ? 2600 : 2200
-    }))
-  );
-  const [workingHours, setWorkingHours] = useState<WorkingHours>({ start: 6, end: 24 });
+  // Day/Night Pricing
+  const [rates, setRates] = useState<Rates>({
+    cricketDay: 1600, cricketNight: 1950,
+    football7sDay: 1600, football7sNight: 1950,
+    football11sDay: 2200, football11sNight: 2600
+  });
+  const [dayNightCutoffHour, setDayNightCutoffHour] = useState(18);
+  const [workingHours, setWorkingHours] = useState<WorkingHours>({ start: 0, end: 24 });
   const [sportAvailability, setSportAvailability] = useState({ cricket: true, football: true });
 
   // Get signed admin token from session for API authentication
@@ -164,8 +169,11 @@ const Admin = () => {
     try {
       const response = await fetch('/api/pricing');
       const data = await response.json();
-      if (data.hourlyPricing) {
-        setPricingRules(data.hourlyPricing);
+      if (data.rates) {
+        setRates(data.rates);
+      }
+      if (data.dayNightCutoffHour) {
+        setDayNightCutoffHour(data.dayNightCutoffHour);
       }
       if (data.workingHours) {
         setWorkingHours(data.workingHours);
@@ -199,7 +207,7 @@ const Admin = () => {
       const response = await fetch('/api/pricing', {
         method: 'POST',
         headers: adminHeaders(),
-        body: JSON.stringify({ hourlyPricing: pricingRules, workingHours, sportAvailability })
+        body: JSON.stringify({ rates, dayNightCutoffHour, workingHours, sportAvailability })
       });
       
       if (response.ok) {
@@ -233,13 +241,32 @@ const Admin = () => {
         await fetch('/api/admin/block-slots', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-          body: JSON.stringify({ sport, date: blockDate, slotIds: [slotId], reason: 'Admin blocked' })
+          body: JSON.stringify({ sport, date: blockDate, slotIds: [slotId], reason: blockReason, customerName: blockCustomerName, customerPhone: blockCustomerPhone })
         });
         await fetchBlockedSlots();
       }
     } catch (err) {
       alert('Failed to update slot');
       fetchBlockedSlots();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const blockFullDay = async (sport: 'cricket' | 'football') => {
+    if (!blockDate) return;
+    setSaving(true);
+    try {
+      const allSlots = Array.from({ length: 24 }, (_, i) => `${i}-${i+1}`);
+      await fetch('/api/admin/block-slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ sport, date: blockDate, slotIds: allSlots, reason: blockReason, customerName: blockCustomerName, customerPhone: blockCustomerPhone })
+      });
+      alert(`Full day blocked successfully for ${sport}`);
+      await fetchBlockedSlots();
+    } catch (err) {
+      alert('Failed to block full day');
     } finally {
       setSaving(false);
     }
@@ -280,10 +307,8 @@ const Admin = () => {
     }
   };
 
-  const updateHourlyPrice = (hour: number, type: 'cricket' | 'football7s' | 'football11s', value: number) => {
-    setPricingRules(prev => prev.map(rule => 
-      rule.hour === hour ? { ...rule, [`${type}Price`]: value } : rule
-    ));
+  const updateRate = (key: keyof Rates, value: number) => {
+    setRates(prev => ({ ...prev, [key]: value }));
   };
 
   const handleLogout = () => {
@@ -637,83 +662,125 @@ const Admin = () => {
                 </p>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b-2 border-gray-200">
-                      <th className="pb-4 text-left font-bold text-gray-500 uppercase text-xs tracking-wider">Time Slot</th>
-                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">Cricket (₹)</th>
-                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">7-a-side (₹)</th>
-                      <th className="pb-4 text-center font-bold text-gray-500 uppercase text-xs tracking-wider">11-a-side (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pricingRules.map(rule => {
-                      const isWithinWorkingHours = rule.hour >= workingHours.start && rule.hour < workingHours.end;
-                      return (
-                        <tr 
-                          key={rule.hour} 
-                          className={`border-b border-gray-100 transition-all ${
-                            isWithinWorkingHours 
-                              ? 'bg-white hover:bg-gray-50' 
-                              : 'opacity-50 bg-gray-100'
-                          }`}
-                        >
-                          <td className="py-4 font-semibold text-gray-900">
-                            <div className="flex items-center gap-2">
-                              {!isWithinWorkingHours && <Lock className="w-4 h-4 text-gray-400" />}
-                              <span className="text-base">
-                                {rule.hour.toString().padStart(2, '0')}:00 - {(rule.hour + 1).toString().padStart(2, '0')}:00
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex justify-center">
-                              <div className="relative w-28">
-                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                  type="number"
-                                  value={rule.cricketPrice}
-                                  onChange={(e) => updateHourlyPrice(rule.hour, 'cricket', Number(e.target.value))}
-                                  disabled={!isWithinWorkingHours}
-                                  className="w-full pl-9 pr-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex justify-center">
-                              <div className="relative w-28">
-                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                  type="number"
-                                  value={rule.football7sPrice || rule.footballPrice || 1600}
-                                  onChange={(e) => updateHourlyPrice(rule.hour, 'football7s', Number(e.target.value))}
-                                  disabled={!isWithinWorkingHours}
-                                  className="w-full pl-9 pr-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4">
-                            <div className="flex justify-center">
-                              <div className="relative w-28">
-                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                  type="number"
-                                  value={rule.football11sPrice || 2200}
-                                  onChange={(e) => updateHourlyPrice(rule.hour, 'football11s', Number(e.target.value))}
-                                  disabled={!isWithinWorkingHours}
-                                  className="w-full pl-9 pr-2 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 font-bold text-center focus:border-[#A3E635] focus:outline-none focus:ring-1 focus:ring-[#A3E635] disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
-                                />
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 mb-1">Night Rate Start Hour</h4>
+                    <p className="text-sm text-gray-500">What time do night rates begin?</p>
+                  </div>
+                  <select
+                    value={dayNightCutoffHour}
+                    onChange={(e) => setDayNightCutoffHour(Number(e.target.value))}
+                    className="px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 font-semibold focus:border-[#A3E635] focus:outline-none transition-all"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {i.toString().padStart(2, '0')}:00 {i < 12 ? 'AM' : 'PM'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {/* Cricket */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <h4 className="font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">Cricket</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Day Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.cricketDay}
+                          onChange={(e) => updateRate('cricketDay', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Night Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.cricketNight}
+                          onChange={(e) => updateRate('cricketNight', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Football 7s */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <h4 className="font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">Football (7-a-side)</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Day Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.football7sDay}
+                          onChange={(e) => updateRate('football7sDay', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Night Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.football7sNight}
+                          onChange={(e) => updateRate('football7sNight', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Football 11s */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <h4 className="font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">Football (11-a-side)</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Day Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.football11sDay}
+                          onChange={(e) => updateRate('football11sDay', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Night Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.football11sNight}
+                          onChange={(e) => updateRate('football11sNight', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -729,19 +796,70 @@ const Admin = () => {
                 Block Slots
               </h2>
 
-              <div className="mb-6">
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Select Date</label>
-                <input
-                  type="date"
-                  value={blockDate}
-                  min={getTodayDate()}
-                  onChange={(e) => setBlockDate(e.target.value)}
-                  className="w-full md:w-1/2 px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
-                />
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Select Date</label>
+                  <input
+                    type="date"
+                    value={blockDate}
+                    min={getTodayDate()}
+                    onChange={(e) => setBlockDate(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Reason</label>
+                  <select
+                    value={blockReason}
+                    onChange={(e) => setBlockReason(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  >
+                    <option value="Tournament">Tournament</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Admin Blocked">Admin Blocked</option>
+                    <option value="Phone Booking">Phone Booking</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Customer Name (Optional)</label>
+                  <input
+                    type="text"
+                    value={blockCustomerName}
+                    onChange={(e) => setBlockCustomerName(e.target.value)}
+                    placeholder="E.g. John Doe"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Customer Phone (Optional)</label>
+                  <input
+                    type="tel"
+                    value={blockCustomerPhone}
+                    onChange={(e) => setBlockCustomerPhone(e.target.value)}
+                    placeholder="E.g. 9876543210"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  />
+                </div>
               </div>
 
               {blockDate && (
-                <div className="space-y-2">
+                <div className="space-y-4">
+                  <div className="flex gap-4 mb-4">
+                    <button
+                      onClick={() => blockFullDay('cricket')}
+                      disabled={saving}
+                      className="flex-1 py-3 bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 font-bold rounded-xl transition-all disabled:opacity-50"
+                    >
+                      Block Full Day (Cricket)
+                    </button>
+                    <button
+                      onClick={() => blockFullDay('football')}
+                      disabled={saving}
+                      className="flex-1 py-3 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-bold rounded-xl transition-all disabled:opacity-50"
+                    >
+                      Block Full Day (Football)
+                    </button>
+                  </div>
                   <div className="flex text-sm font-bold text-gray-500 px-3 mb-2">
                     <div className="w-1/3">Time Slot</div>
                     <div className="w-1/3 text-center">Cricket</div>
@@ -767,20 +885,20 @@ const Admin = () => {
                         <div className="w-1/3 flex justify-center">
                           <button 
                             onClick={() => toggleSlotBlock(hour, 'cricket', isCricketBlocked)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full text-lg hover:scale-110 transition-transform active:scale-95"
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isCricketBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
                             title={isCricketBlocked ? "Unblock Cricket" : "Block Cricket"}
                           >
-                            {isCricketBlocked ? '❌' : '✅'}
+                            {isCricketBlocked ? <XCircle className="w-5 h-5 text-red-500" /> : <CheckCircle className="w-5 h-5 text-gray-400 hover:text-green-500" />}
                           </button>
                         </div>
 
                         <div className="w-1/3 flex justify-center">
                           <button 
                             onClick={() => toggleSlotBlock(hour, 'football', isFootballBlocked)}
-                            className="w-8 h-8 flex items-center justify-center rounded-full text-lg hover:scale-110 transition-transform active:scale-95"
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isFootballBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
                             title={isFootballBlocked ? "Unblock Football" : "Block Football"}
                           >
-                            {isFootballBlocked ? '❌' : '✅'}
+                            {isFootballBlocked ? <XCircle className="w-5 h-5 text-red-500" /> : <CheckCircle className="w-5 h-5 text-gray-400 hover:text-green-500" />}
                           </button>
                         </div>
                       </div>

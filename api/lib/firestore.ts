@@ -15,16 +15,18 @@ if (getApps().length === 0) {
 
 const db = getFirestore();
 
-// Default pricing configuration (matches existing pricing.json)
 const DEFAULT_PRICING = {
-  workingHours: { start: 11, end: 24 },
+  workingHours: { start: 0, end: 24 },
   sportAvailability: { cricket: true, football: true },
-  hourlyPricing: Array.from({ length: 24 }, (_, i) => ({
-    hour: i,
-    cricketPrice: i >= 18 && i < 22 ? 1950 : 1600,
-    football7sPrice: i >= 18 && i < 22 ? 1950 : 1600,
-    football11sPrice: i >= 18 && i < 22 ? 2600 : 2200,
-  })),
+  dayNightCutoffHour: 18,
+  rates: {
+    cricketDay: 1000,
+    cricketNight: 1600,
+    football7sDay: 1000,
+    football7sNight: 1600,
+    football11sDay: 1000,
+    football11sNight: 1600,
+  },
   lastUpdated: new Date().toISOString(),
 };
 
@@ -54,15 +56,24 @@ export async function getPricingConfig() {
  * Save pricing config to Firestore.
  */
 export async function savePricingConfig(data: {
-  hourlyPricing: any[];
+  rates: {
+    cricketDay: number;
+    cricketNight: number;
+    football7sDay: number;
+    football7sNight: number;
+    football11sDay: number;
+    football11sNight: number;
+  };
+  dayNightCutoffHour?: number;
   workingHours?: { start: number; end: number };
   sportAvailability?: { cricket: boolean; football: boolean };
 }) {
   try {
     const pricingData = {
-      workingHours: data.workingHours || { start: 6, end: 24 },
+      workingHours: data.workingHours || { start: 0, end: 24 },
       sportAvailability: data.sportAvailability || { cricket: true, football: true },
-      hourlyPricing: data.hourlyPricing,
+      dayNightCutoffHour: data.dayNightCutoffHour || 18,
+      rates: data.rates,
       lastUpdated: new Date().toISOString(),
     };
 

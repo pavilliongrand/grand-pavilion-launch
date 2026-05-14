@@ -5,6 +5,12 @@ import { google } from 'googleapis';
 
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
 
+export interface OccupiedSlotInfo {
+  slotId: string;
+  reason: string;
+  blocked: boolean;
+}
+
 // Initialize Google Calendar client with Service Account
 function getCalendarClient() {
   const auth = new google.auth.GoogleAuth({
@@ -22,6 +28,14 @@ function getCalendarClient() {
  * Get occupied slot IDs for a specific date and sport
  */
 export async function getOccupiedSlotsFromCalendar(date: string, sport: string): Promise<string[]> {
+  const occupiedDetails = await getOccupiedSlotDetailsFromCalendar(date, sport);
+  return occupiedDetails.map((slot) => slot.slotId);
+}
+
+/**
+ * Get occupied slot IDs and display reasons for a specific date and sport
+ */
+export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: string): Promise<OccupiedSlotInfo[]> {
   try {
     const calendar = getCalendarClient();
     
@@ -40,12 +54,14 @@ export async function getOccupiedSlotsFromCalendar(date: string, sport: string):
     const events = response.data.items || [];
     
     // Filter by sport and extract slot IDs (including blocked slots)
-    const occupiedSlotIds: string[] = [];
+    const occupiedSlots: OccupiedSlotInfo[] = [];
     
     events.forEach((event: any) => {
       const eventSport = event.extendedProperties?.private?.sport;
       const slotId = event.extendedProperties?.private?.slotId;
       const isBlocked = event.extendedProperties?.private?.blocked === 'true';
+      const reason = event.extendedProperties?.private?.reason || 'Booked';
+      const customerName = event.extendedProperties?.private?.customerName;
       
       // Normalize sports to handle 7s/11s as just "football" for admin blocking logic
       const normalizedRequestedSport = sport.startsWith('football') ? 'football' : sport;
@@ -54,17 +70,21 @@ export async function getOccupiedSlotsFromCalendar(date: string, sport: string):
       if (slotId) {
         if (!isBlocked) {
           // Real booking: blocks the ground for ALL sports
-          occupiedSlotIds.push(slotId);
+          occupiedSlots.push({ slotId, reason: 'Booked', blocked: false });
         } else {
           // Admin block: only blocks the specified sport
           if (normalizedEventSport === normalizedRequestedSport) {
-            occupiedSlotIds.push(slotId);
+            occupiedSlots.push({
+              slotId,
+              reason: customerName ? `${reason}: ${customerName}` : reason,
+              blocked: true,
+            });
           }
         }
       }
     });
 
-    return occupiedSlotIds;
+    return occupiedSlots;
   } catch (error) {
     console.error('Error fetching occupied slots from calendar:', error);
     throw new Error('Failed to check slot availability. Please try again.');
