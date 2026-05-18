@@ -82,6 +82,8 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
         } else {
           // Admin block: only blocks the specific sport (or all football if legacy 'football')
           if (sportMatchesBlock(sport, eventSport || '')) {
+            occupiedSlots.push({
+              slotId,
               reason: customerName ? `${reason}: ${customerName}` : reason,
               blocked: true,
             });
