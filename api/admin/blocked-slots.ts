@@ -66,6 +66,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           slotIds: [event.extendedProperties?.private?.slotId || ''],
           slotTimes: [`${startHourIST}:00 - ${endHourIST === 0 ? 24 : endHourIST}:00`],
           reason: event.extendedProperties?.private?.reason || '',
+          customerName: event.extendedProperties?.private?.customerName || '',
+          customerPhone: event.extendedProperties?.private?.customerPhone || '',
           createdAt: event.created || '',
         };
       });

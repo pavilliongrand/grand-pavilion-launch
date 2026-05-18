@@ -14,6 +14,7 @@ interface BlockSlotRequest {
   reason: string;
   customerName?: string;
   customerPhone?: string;
+  isBooking?: boolean;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { sport, date, slotIds, reason, customerName, customerPhone }: BlockSlotRequest = req.body;
+    const { sport, date, slotIds, reason, customerName, customerPhone, isBooking }: BlockSlotRequest = req.body;
 
     if (!sport || !date || !slotIds || slotIds.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -57,21 +58,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Accurately adds 1 hour regardless of timezone
 
       const event = {
-        summary: `BLOCKED - ${sport.toUpperCase()}`,
+        summary: isBooking ? `${sport.toUpperCase()} - ${reason}` : `BLOCKED - ${sport.toUpperCase()}`,
         description: `🚫 Reason: ${reason}\n🏏 Sport: ${sport}\n⏰ Time: ${startHour}:00 - ${startHour + 1}:00\n👤 Customer: ${customerName || 'N/A'}\n📞 Phone: ${customerPhone || 'N/A'}`,
         start: { dateTime: startTime.toISOString(), timeZone: 'Asia/Kolkata' },
         end: { dateTime: endTime.toISOString(), timeZone: 'Asia/Kolkata' },
         extendedProperties: {
           private: { 
-            blocked: 'true', 
+            blocked: isBooking ? 'false' : 'true', 
             sport, 
             slotId, 
             reason,
             customerName: customerName || '',
-            customerPhone: customerPhone || ''
+            customerPhone: customerPhone || '',
+            name: customerName || reason,
+            phone: customerPhone || ''
           },
         },
-        colorId: '11',
+        colorId: isBooking ? (sport === 'cricket' ? '9' : '11') : '11',
       };
 
       const response = await calendar.events.insert({

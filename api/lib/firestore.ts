@@ -80,9 +80,9 @@ export async function savePricingConfig(data: {
     await db.collection('config').doc('pricing').set(pricingData, { merge: true });
     
     return { success: true, lastUpdated: pricingData.lastUpdated };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving pricing to Firestore:', error);
-    throw new Error('Failed to save pricing configuration');
+    throw new Error(`Failed to save pricing: ${error?.message || String(error)}`);
   }
 }
 

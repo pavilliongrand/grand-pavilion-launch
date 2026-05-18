@@ -11,6 +11,7 @@ interface TimeSlot {
   endHour: number;
   available: boolean;
   price: number;
+  unavailableReason?: string;
 }
 
 const formatTime12Hour = (timeStr: string) => {
@@ -36,22 +37,25 @@ const formatTime12Hour = (timeStr: string) => {
 };
 
 const CricketSVG = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m11.4 15.63-8.82 8.82a1.32 1.32 0 0 1-1.87-1.87l8.82-8.82" />
-    <path d="M12.8 14.23a4 4 0 0 0 5.66 0l4.24-4.24a4 4 0 0 0 0-5.66l-.05-.05a4 4 0 0 0-5.66 0l-4.24 4.24a4 4 0 0 0 0 5.66z" />
-    <circle cx="5" cy="5" r="2" />
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    {/* Bat */}
+    <rect x="7" y="3" width="4" height="13" rx="1" transform="rotate(45 9 9.5)" />
+    <path d="M5.5 17L3 19.5" />
+    {/* Ball */}
+    <circle cx="17" cy="17" r="3" />
+    <path d="M15.5 15.5L18.5 18.5" />
   </svg>
 );
 
 const FootballSVG = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />
-    <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-    <path d="m9 12-4.5-3" />
-    <path d="m15 12 4.5-3" />
-    <path d="m12 15 0 7" />
-    <path d="m9 12-2 5" />
-    <path d="m15 12 2 5" />
+    <path d="M12 7l3 4.5-1.5 5h-3l-1.5-5L12 7z" />
+    <path d="M12 7v-5" />
+    <path d="M15 11.5l4.5-2.5" />
+    <path d="M9 11.5L4.5 9" />
+    <path d="M13.5 16.5L16 21" />
+    <path d="M10.5 16.5L8 21" />
   </svg>
 );
 
@@ -134,15 +138,11 @@ const Booking = () => {
     const today = new Date();
     const todayDayOfWeek = today.getDay();
 
-    // Weekend slots (Sat=6, Sun=0) only bookable:
-    // - On Friday (today) for this weekend (Sat/Sun)
-    // - On Friday (today) for next week's weekend (next Sat/Sun) which are still within the 7-day window
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    const isFridayToday = todayDayOfWeek === 5;
-    const isWeekendAllowed = !isWeekend || isFridayToday;
+    const isWeekendAllowed = !isWeekend || (todayDayOfWeek === 5 || todayDayOfWeek === 6 || todayDayOfWeek === 0);
 
     if (!isWeekendAllowed) {
-      return slots.map(s => ({ ...s, available: false }));
+      return slots.map(s => ({ ...s, available: false, unavailableReason: 'Booking opens Friday' }));
     }
     return slots;
   };
@@ -307,8 +307,7 @@ const Booking = () => {
       {/* Logo Header */}
       <div className="bg-white px-4 py-5 flex items-center justify-center border-b border-gray-100 mb-2">
         <Link to="/" className="flex flex-col items-center gap-1.5">
-          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-10 w-auto object-contain brightness-0" />
-          <span className="text-[#84cc16] font-bold text-[10px] tracking-widest uppercase">Grand Pavilion</span>
+          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-16 w-auto object-contain brightness-0" />
         </Link>
       </div>
 
@@ -356,11 +355,6 @@ const Booking = () => {
                       )}
                     </div>
                     <div className="font-bold text-gray-900 text-sm">{s.label}</div>
-                    {priceRange && (
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        ₹{priceRange.day.toLocaleString()} – ₹{priceRange.night.toLocaleString()}
-                      </div>
-                    )}
                   </button>
                 );
               })}
@@ -414,12 +408,13 @@ const Booking = () => {
           {(() => {
             const d = new Date(date);
             const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-            const isFridayToday = new Date().getDay() === 5;
-            if (isWeekend && !isFridayToday) {
+            const todayDayOfWeek = new Date().getDay();
+            const isWeekendAllowed = !isWeekend || (todayDayOfWeek === 5 || todayDayOfWeek === 6 || todayDayOfWeek === 0);
+            if (!isWeekendAllowed) {
               return (
                 <div className="mx-4 mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2">
                   <span className="text-amber-500 text-base leading-none">⚠</span>
-                  <p className="text-amber-700 text-sm font-medium">Slots only available to book on Friday for weekends.</p>
+                  <p className="text-amber-700 text-sm font-medium">Weekend slots open for booking on Friday.</p>
                 </div>
               );
             }
@@ -470,7 +465,7 @@ const Booking = () => {
                               <div className={`font-semibold text-sm ${isSel ? 'text-gray-900' : slot.available ? 'text-gray-800' : 'text-gray-400'}`}>
                                 {startTime} – {endTime}
                               </div>
-                              {!slot.available && <div className="text-xs text-red-400 font-medium">Booked</div>}
+                              {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason || 'Booked'}</div>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2.5">

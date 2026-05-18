@@ -107,8 +107,7 @@ function generateSlots(
   const istTime = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
   const todayDayOfWeek = istTime.getDay();
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-  const isFridayToday = todayDayOfWeek === 5;
-  isWeekendAllowed = !isWeekend || isFridayToday;
+  isWeekendAllowed = !isWeekend || (todayDayOfWeek === 5 || todayDayOfWeek === 6 || todayDayOfWeek === 0);
 
   const istDateStr = istTime.getFullYear() + '-' + String(istTime.getMonth() + 1).padStart(2, '0') + '-' + String(istTime.getDate()).padStart(2, '0');
   const isToday = targetDateStr === istDateStr;

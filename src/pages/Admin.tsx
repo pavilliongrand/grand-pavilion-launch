@@ -50,6 +50,8 @@ interface BlockedSlot {
   slotIds: string[];
   slotTimes: string[];
   reason: string;
+  customerName?: string;
+  customerPhone?: string;
   createdAt: string;
 }
 
@@ -98,9 +100,15 @@ const Admin = () => {
   
   // Slot Management
   const [blockDate, setBlockDate] = useState("");
-  const [blockReason, setBlockReason] = useState("Tournament");
+  const [blockReason, setBlockReason] = useState("Maintenance");
   const [blockCustomerName, setBlockCustomerName] = useState("");
   const [blockCustomerPhone, setBlockCustomerPhone] = useState("");
+
+  // Admin Booking
+  const [adminBookingDate, setAdminBookingDate] = useState("");
+  const [adminBookingReason, setAdminBookingReason] = useState("Phone Booking");
+  const [adminBookingCustomerName, setAdminBookingCustomerName] = useState("");
+  const [adminBookingCustomerPhone, setAdminBookingCustomerPhone] = useState("");
   
   // Day/Night Pricing
   const [rates, setRates] = useState<Rates>({
@@ -162,6 +170,12 @@ const Admin = () => {
       fetchBlockedSlots();
     }
   }, [blockDate]);
+
+  useEffect(() => {
+    if (adminBookingDate) {
+      fetchBookings();
+    }
+  }, [adminBookingDate]);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -323,6 +337,25 @@ const Admin = () => {
     } catch (err: any) {
       console.error('Full day block error:', err);
       alert(`Failed to block full day: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const createAdminBooking = async (sport: 'cricket' | 'football', slotIds: string[]) => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/block-slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+        body: JSON.stringify({ sport, date: adminBookingDate, slotIds, reason: adminBookingReason, customerName: adminBookingCustomerName, customerPhone: adminBookingCustomerPhone, isBooking: true })
+      });
+      if (!response.ok) throw new Error('Failed to create admin booking');
+      alert(`✅ Admin booking created successfully`);
+      await fetchBookings();
+    } catch (err: any) {
+      console.error('Admin booking error:', err);
+      alert(`Failed to create admin booking: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -511,17 +544,133 @@ const Admin = () => {
 
         {/* Bookings Tab */}
         {activeTab === "bookings" && (
-          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-2xl font-bold text-gray-900">All Bookings</h2>
-              <button
-                onClick={fetchBookings}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-900"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
-                Refresh
-              </button>
+          <div className="space-y-6">
+            {/* Create Admin Booking */}
+            <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-900">
+                <Plus className="w-5 h-5 text-[#84cc16]" />
+                Create Admin Booking
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Select Date</label>
+                  <input
+                    type="date"
+                    value={adminBookingDate}
+                    min={getTodayDate()}
+                    onChange={(e) => setAdminBookingDate(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Type</label>
+                  <select
+                    value={adminBookingReason}
+                    onChange={(e) => setAdminBookingReason(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  >
+                    <option value="Phone Booking">Phone Booking</option>
+                    <option value="Tournament">Tournament</option>
+                    <option value="Camp">Camp</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Customer Name</label>
+                  <input
+                    type="text"
+                    value={adminBookingCustomerName}
+                    onChange={(e) => setAdminBookingCustomerName(e.target.value)}
+                    placeholder="E.g. John Doe"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Customer Phone</label>
+                  <input
+                    type="tel"
+                    value={adminBookingCustomerPhone}
+                    onChange={(e) => setAdminBookingCustomerPhone(e.target.value)}
+                    placeholder="E.g. 9876543210"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  />
+                </div>
+              </div>
+              {adminBookingDate && (
+                <div className="space-y-4">
+                  <div className="flex gap-4 mb-4">
+                    <button
+                      onClick={() => createAdminBooking('cricket', Array.from({ length: 24 }, (_, i) => `${i}-${i+1}`))}
+                      disabled={saving || !adminBookingCustomerName}
+                      className="flex-1 py-3 bg-[#F7FEE7] text-[#65a30d] border border-[#A3E635] hover:bg-[#ecfccb] font-bold rounded-xl transition-all disabled:opacity-50"
+                    >
+                      Book Full Day (Cricket)
+                    </button>
+                    <button
+                      onClick={() => createAdminBooking('football', Array.from({ length: 24 }, (_, i) => `${i}-${i+1}`))}
+                      disabled={saving || !adminBookingCustomerName}
+                      className="flex-1 py-3 bg-[#F7FEE7] text-[#65a30d] border border-[#A3E635] hover:bg-[#ecfccb] font-bold rounded-xl transition-all disabled:opacity-50"
+                    >
+                      Book Full Day (Football)
+                    </button>
+                  </div>
+                  <div className="flex text-sm font-bold text-gray-500 px-3 mb-2">
+                    <div className="w-1/3">Time Slot</div>
+                    <div className="w-1/3 text-center">Book (Cricket)</div>
+                    <div className="w-1/3 text-center">Book (Football)</div>
+                  </div>
+                  {Array.from({ length: 24 }, (_, i) => i).map(hour => {
+                    const slotId = `${hour}-${hour+1}`;
+                    const format = (h: number) => {
+                      const ampm = h >= 12 && h < 24 ? 'PM' : 'AM';
+                      let h12 = h % 12;
+                      h12 = h12 ? h12 : 12;
+                      return `${String(h12).padStart(2, '0')}:00 ${ampm}`;
+                    };
+                    const time = `${format(hour)} - ${format(hour+1)}`;
+                    
+                    const isBooked = bookings.some(b => b.date === adminBookingDate && b.slots.includes(slotId));
+
+                    return (
+                      <div key={hour} className={`flex items-center p-3 rounded-xl border transition-colors ${saving || isBooked ? 'opacity-50 pointer-events-none' : ''} ${isBooked ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-200'}`}>
+                        <div className="w-1/3 font-semibold text-xs sm:text-sm text-gray-900">{time}</div>
+                        
+                        <div className="w-1/3 flex justify-center">
+                          <button 
+                            onClick={() => createAdminBooking('cricket', [slotId])}
+                            disabled={!adminBookingCustomerName}
+                            className={`px-3 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50`}
+                          >
+                            Book
+                          </button>
+                        </div>
+
+                        <div className="w-1/3 flex justify-center">
+                          <button 
+                            onClick={() => createAdminBooking('football', [slotId])}
+                            disabled={!adminBookingCustomerName}
+                            className={`px-3 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50`}
+                          >
+                            Book
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-2xl font-bold text-gray-900">All Bookings</h2>
+                <button
+                  onClick={fetchBookings}
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-900"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+                  Refresh
+                </button>
+              </div>
 
             {loading ? (
               <div className="flex justify-center py-12">
@@ -589,6 +738,7 @@ const Admin = () => {
                 ))}
               </div>
             )}
+            </div>
           </div>
         )}
 
@@ -910,10 +1060,8 @@ const Admin = () => {
                     onChange={(e) => setBlockReason(e.target.value)}
                     className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
                   >
-                    <option value="Tournament">Tournament</option>
                     <option value="Maintenance">Maintenance</option>
                     <option value="Admin Blocked">Admin Blocked</option>
-                    <option value="Phone Booking">Phone Booking</option>
                   </select>
                 </div>
                 <div>
@@ -1048,6 +1196,11 @@ const Admin = () => {
                           {block.reason && (
                             <div className="text-sm text-gray-500">
                               <strong>Reason:</strong> {block.reason}
+                            </div>
+                          )}
+                          {block.customerName && (
+                            <div className="text-sm text-gray-500">
+                              <strong>Customer:</strong> {block.customerName} {block.customerPhone ? `(${block.customerPhone})` : ''}
                             </div>
                           )}
                         </div>
