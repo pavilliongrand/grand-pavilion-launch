@@ -1,13 +1,15 @@
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-// Ensure Firebase Admin is initialized (same as firestore.ts — reuses existing app)
+// Ensure Firebase Admin is initialized.
+// Prefers FIREBASE_ADMIN_CLIENT_EMAIL / FIREBASE_ADMIN_PRIVATE_KEY (Firebase-specific
+// service account). Falls back to the Google Calendar service account.
 if (getApps().length === 0) {
   initializeApp({
     credential: cert({
       projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      privateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL || process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      privateKey: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
     }),
   });
 }

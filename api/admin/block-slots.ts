@@ -3,18 +3,19 @@ import { google } from 'googleapis';
 import { extractAndVerifyAdmin } from '../lib/verifyAdminToken.js';
 import { applyCors } from '../lib/cors.js';
 
-const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || '';
+const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
 const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
 const PRIVATE_KEY = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
 interface BlockSlotRequest {
-  sport: 'cricket' | 'football';
+  sport: 'cricket' | 'football' | 'football-7s' | 'football-11s';
   date: string;
   slotIds: string[];
   reason: string;
   customerName?: string;
   customerPhone?: string;
   isBooking?: boolean;
+  amount?: number;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -36,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { sport, date, slotIds, reason, customerName, customerPhone, isBooking }: BlockSlotRequest = req.body;
+    const { sport, date, slotIds, reason, customerName, customerPhone, isBooking, amount }: BlockSlotRequest = req.body;
 
     if (!sport || !date || !slotIds || slotIds.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -71,7 +72,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             customerName: customerName || '',
             customerPhone: customerPhone || '',
             name: customerName || reason,
-            phone: customerPhone || ''
+            phone: customerPhone || '',
+            amount: isBooking && amount ? amount.toString() : '0',
           },
         },
         colorId: isBooking ? (sport === 'cricket' ? '9' : '11') : '11',

@@ -55,6 +55,14 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
     
     // Filter by sport and extract slot IDs (including blocked slots)
     const occupiedSlots: OccupiedSlotInfo[] = [];
+
+    // Returns true if a block event for `blockSport` should affect `requestedSport`.
+    // Legacy 'football' blocks all football variants; specific variants only block themselves.
+    const sportMatchesBlock = (requestedSport: string, blockSport: string): boolean => {
+      if (blockSport === requestedSport) return true;
+      if (blockSport === 'football' && requestedSport.startsWith('football')) return true;
+      return false;
+    };
     
     events.forEach((event: any) => {
       const eventSport = event.extendedProperties?.private?.sport;
@@ -62,10 +70,6 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
       const isBlocked = event.extendedProperties?.private?.blocked === 'true';
       const reason = event.extendedProperties?.private?.reason || 'Booked';
       const customerName = event.extendedProperties?.private?.customerName;
-      
-      // Normalize sports to handle 7s/11s as just "football" for admin blocking logic
-      const normalizedRequestedSport = sport.startsWith('football') ? 'football' : sport;
-      const normalizedEventSport = eventSport?.startsWith('football') ? 'football' : eventSport;
       
       if (slotId) {
         if (!isBlocked) {
@@ -76,10 +80,8 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
           }
           occupiedSlots.push({ slotId, reason: displayReason, blocked: false });
         } else {
-          // Admin block: only blocks the specified sport
-          if (normalizedEventSport === normalizedRequestedSport) {
-            occupiedSlots.push({
-              slotId,
+          // Admin block: only blocks the specific sport (or all football if legacy 'football')
+          if (sportMatchesBlock(sport, eventSport || '')) {
               reason: customerName ? `${reason}: ${customerName}` : reason,
               blocked: true,
             });

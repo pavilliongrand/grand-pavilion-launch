@@ -109,6 +109,7 @@ const Admin = () => {
   const [adminBookingReason, setAdminBookingReason] = useState("Phone Booking");
   const [adminBookingCustomerName, setAdminBookingCustomerName] = useState("");
   const [adminBookingCustomerPhone, setAdminBookingCustomerPhone] = useState("");
+  const [adminBookingAmount, setAdminBookingAmount] = useState("");
   
   // Day/Night Pricing
   const [rates, setRates] = useState<Rates>({
@@ -288,7 +289,7 @@ const Admin = () => {
     }
   };
 
-  const toggleSlotBlock = async (hour: number, sport: 'cricket' | 'football', currentlyBlocked: boolean) => {
+  const toggleSlotBlock = async (hour: number, sport: 'cricket' | 'football-7s' | 'football-11s', currentlyBlocked: boolean) => {
     const slotId = `${hour}-${hour+1}`;
     setSaving(true);
     try {
@@ -321,7 +322,7 @@ const Admin = () => {
     }
   };
 
-  const blockFullDay = async (sport: 'cricket' | 'football') => {
+  const blockFullDay = async (sport: 'cricket' | 'football-7s' | 'football-11s') => {
     if (!blockDate) return;
     setSaving(true);
     try {
@@ -348,7 +349,7 @@ const Admin = () => {
       const response = await fetch('/api/admin/block-slots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-        body: JSON.stringify({ sport, date: adminBookingDate, slotIds, reason: adminBookingReason, customerName: adminBookingCustomerName, customerPhone: adminBookingCustomerPhone, isBooking: true })
+        body: JSON.stringify({ sport, date: adminBookingDate, slotIds, reason: adminBookingReason, customerName: adminBookingCustomerName, customerPhone: adminBookingCustomerPhone, isBooking: true, amount: adminBookingAmount ? Number(adminBookingAmount) : undefined })
       });
       if (!response.ok) throw new Error('Failed to create admin booking');
       alert(`✅ Admin booking created successfully`);
@@ -591,6 +592,18 @@ const Admin = () => {
                     value={adminBookingCustomerPhone}
                     onChange={(e) => setAdminBookingCustomerPhone(e.target.value)}
                     placeholder="E.g. 9876543210"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Amount (₹)</label>
+                  <input
+                    type="number"
+                    value={adminBookingAmount}
+                    onChange={(e) => setAdminBookingAmount(e.target.value)}
+                    placeholder="E.g. 1600"
+                    min="0"
+                    step="50"
                     className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
                   />
                 </div>
@@ -1088,26 +1101,34 @@ const Admin = () => {
 
               {blockDate && (
                 <div className="space-y-4">
-                  <div className="flex gap-4 mb-4">
+                  <div className="flex gap-2 mb-4 flex-wrap">
                     <button
                       onClick={() => blockFullDay('cricket')}
                       disabled={saving}
-                      className="flex-1 py-3 bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 font-bold rounded-xl transition-all disabled:opacity-50"
+                      className="flex-1 min-w-[140px] py-3 bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 font-bold rounded-xl transition-all disabled:opacity-50"
                     >
                       Block Full Day (Cricket)
                     </button>
                     <button
-                      onClick={() => blockFullDay('football')}
+                      onClick={() => blockFullDay('football-7s')}
                       disabled={saving}
-                      className="flex-1 py-3 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-bold rounded-xl transition-all disabled:opacity-50"
+                      className="flex-1 min-w-[140px] py-3 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-bold rounded-xl transition-all disabled:opacity-50"
                     >
-                      Block Full Day (Football)
+                      Block Full Day (Football 7s)
+                    </button>
+                    <button
+                      onClick={() => blockFullDay('football-11s')}
+                      disabled={saving}
+                      className="flex-1 min-w-[140px] py-3 bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 font-bold rounded-xl transition-all disabled:opacity-50"
+                    >
+                      Block Full Day (Football 11s)
                     </button>
                   </div>
                   <div className="flex text-sm font-bold text-gray-500 px-3 mb-2">
-                    <div className="w-1/3">Time Slot</div>
-                    <div className="w-1/3 text-center">Cricket</div>
-                    <div className="w-1/3 text-center">Football</div>
+                    <div className="w-1/4">Time Slot</div>
+                    <div className="w-1/4 text-center">Cricket</div>
+                    <div className="w-1/4 text-center">Football 7s</div>
+                    <div className="w-1/4 text-center">Football 11s</div>
                   </div>
                   {Array.from({ length: 24 }, (_, i) => i).map(hour => {
                     const slotId = `${hour}-${hour+1}`;
@@ -1120,13 +1141,14 @@ const Admin = () => {
                     const time = `${format(hour)} - ${format(hour+1)}`;
                     
                     const isCricketBlocked = blockedSlots.some(b => b.date === blockDate && b.sport === 'cricket' && b.slotIds.includes(slotId));
-                    const isFootballBlocked = blockedSlots.some(b => b.date === blockDate && b.sport === 'football' && b.slotIds.includes(slotId));
+                    const isFootball7sBlocked = blockedSlots.some(b => b.date === blockDate && (b.sport === 'football-7s' || b.sport === 'football') && b.slotIds.includes(slotId));
+                    const isFootball11sBlocked = blockedSlots.some(b => b.date === blockDate && (b.sport === 'football-11s' || b.sport === 'football') && b.slotIds.includes(slotId));
 
                     return (
-                      <div key={hour} className={`flex items-center p-3 rounded-xl border transition-colors ${saving ? 'opacity-50 pointer-events-none' : ''} ${isCricketBlocked && isFootballBlocked ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-200'}`}>
-                        <div className="w-1/3 font-semibold text-xs sm:text-sm text-gray-900">{time}</div>
+                      <div key={hour} className={`flex items-center p-3 rounded-xl border transition-colors ${saving ? 'opacity-50 pointer-events-none' : ''} ${isCricketBlocked && isFootball7sBlocked && isFootball11sBlocked ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-200'}`}>
+                        <div className="w-1/4 font-semibold text-xs sm:text-sm text-gray-900">{time}</div>
                         
-                        <div className="w-1/3 flex justify-center">
+                        <div className="w-1/4 flex justify-center">
                           <button 
                             onClick={() => toggleSlotBlock(hour, 'cricket', isCricketBlocked)}
                             className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isCricketBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
@@ -1136,13 +1158,23 @@ const Admin = () => {
                           </button>
                         </div>
 
-                        <div className="w-1/3 flex justify-center">
+                        <div className="w-1/4 flex justify-center">
                           <button 
-                            onClick={() => toggleSlotBlock(hour, 'football', isFootballBlocked)}
-                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isFootballBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
-                            title={isFootballBlocked ? "Unblock Football" : "Block Football"}
+                            onClick={() => toggleSlotBlock(hour, 'football-7s', isFootball7sBlocked)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isFootball7sBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
+                            title={isFootball7sBlocked ? "Unblock Football 7s" : "Block Football 7s"}
                           >
-                            {isFootballBlocked ? <XCircle className="w-5 h-5 text-red-500" /> : <CheckCircle className="w-5 h-5 text-gray-400 hover:text-green-500" />}
+                            {isFootball7sBlocked ? <XCircle className="w-5 h-5 text-red-500" /> : <CheckCircle className="w-5 h-5 text-gray-400 hover:text-green-500" />}
+                          </button>
+                        </div>
+
+                        <div className="w-1/4 flex justify-center">
+                          <button 
+                            onClick={() => toggleSlotBlock(hour, 'football-11s', isFootball11sBlocked)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isFootball11sBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
+                            title={isFootball11sBlocked ? "Unblock Football 11s" : "Block Football 11s"}
+                          >
+                            {isFootball11sBlocked ? <XCircle className="w-5 h-5 text-red-500" /> : <CheckCircle className="w-5 h-5 text-gray-400 hover:text-green-500" />}
                           </button>
                         </div>
                       </div>

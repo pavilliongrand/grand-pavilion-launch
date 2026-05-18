@@ -113,20 +113,20 @@ const Booking = () => {
 
   const fetchSlots = async () => {
     setLoading(true);
+    setError(null);
     try {
-      try {
-        const response = await fetch(`/api/slots?date=${date}&sport=${sport}`);
-        const data = await response.json();
-        const availableSlotsWithWeekendRule = enforceWeekendRule(data.slots || [], date);
-        setAvailableSlots(availableSlotsWithWeekendRule);
-      } catch (apiError) {
-        console.log('API not available, using mock data');
-        let mockSlots = generateMockSlots(date, sport);
-        mockSlots = enforceWeekendRule(mockSlots, date);
-        setAvailableSlots(mockSlots);
+      const response = await fetch(`/api/slots?date=${date}&sport=${sport}`);
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'Failed to load slots. Please try again.');
+        setAvailableSlots([]);
+        return;
       }
+      const availableSlotsWithWeekendRule = enforceWeekendRule(data.slots || [], date);
+      setAvailableSlots(availableSlotsWithWeekendRule);
     } catch (err) {
-      setError("Failed to load slots");
+      setError('Unable to reach the server. Please check your connection.');
+      setAvailableSlots([]);
     } finally {
       setLoading(false);
     }
@@ -143,27 +143,6 @@ const Booking = () => {
 
     if (!isWeekendAllowed) {
       return slots.map(s => ({ ...s, available: false, unavailableReason: 'Booking opens Friday' }));
-    }
-    return slots;
-  };
-
-  const generateMockSlots = (date: string, sport: string) => {
-    const slots = [];
-    // Generate 24 hours
-    for (let hour = 0; hour < 24; hour++) {
-      const isPeak = hour >= 18 || hour < 6;
-      const cricketPrice = isPeak ? 1950 : 1500;
-      const footballPrice = isPeak ? 1300 : 1000;
-      const nextHour = hour + 1;
-
-      slots.push({
-        id: `${hour}-${nextHour}`,
-        time: `${String(hour).padStart(2, '0')}:00 - ${String(nextHour === 24 ? '00' : nextHour).padStart(2, '0')}:00`,
-        startHour: hour,
-        endHour: nextHour === 24 ? 0 : nextHour,
-        available: Math.random() > 0.3,
-        price: sport === 'cricket' ? cricketPrice : footballPrice
-      });
     }
     return slots;
   };
@@ -465,7 +444,7 @@ const Booking = () => {
                               <div className={`font-semibold text-sm ${isSel ? 'text-gray-900' : slot.available ? 'text-gray-800' : 'text-gray-400'}`}>
                                 {startTime} – {endTime}
                               </div>
-                              {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason || 'Booked'}</div>}
+                              {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason === 'Booking opens Friday' ? slot.unavailableReason : 'Booked'}</div>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2.5">
