@@ -55,7 +55,7 @@ export const Services = () => {
             {services.map((service, index) => (
               <Link
                 key={index}
-                to="/booking"
+                to={`/booking?sport=${service.sport.toLowerCase()}`}
                 className="group relative bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-[#84cc16] transition-all duration-500 hover:scale-[1.02] hover:shadow-xl hover:shadow-[#A3E635]/10 cursor-pointer block"
               >
                 {/* Popular Badge */}

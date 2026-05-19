@@ -75,7 +75,7 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
         if (!isBlocked) {
           // Real booking: blocks the ground for ALL sports
           let displayReason = 'Booked';
-          if (reason === 'Tournament' || reason === 'Camp' || reason === 'Phone Booking') {
+          if (reason === 'Tournament' || reason === 'Camp') {
             displayReason = reason;
           }
           occupiedSlots.push({ slotId, reason: displayReason, blocked: false });

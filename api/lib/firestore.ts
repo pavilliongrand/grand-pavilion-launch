@@ -1,11 +1,10 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Initialize Firebase Admin SDK (server-side only).
-// Prefers dedicated FIREBASE_ADMIN_* credentials (downloaded from Firebase Console →
-// Project Settings → Service Accounts → Generate new private key).
-// Falls back to the Google Calendar service account for backward compatibility,
-// but that account needs the "Cloud Datastore User" IAM role on GCP to write Firestore.
+// Firebase Admin SDK — uses FIREBASE_ADMIN_CLIENT_EMAIL + FIREBASE_ADMIN_PRIVATE_KEY
+// (the firebase-adminsdk service account downloaded from Firebase Console →
+//  Project Settings → Service Accounts → Generate new private key).
+// These credentials have full Firestore access by default.
 if (getApps().length === 0) {
   initializeApp({
     credential: cert({
@@ -33,31 +32,20 @@ const DEFAULT_PRICING = {
   lastUpdated: new Date().toISOString(),
 };
 
-/**
- * Get pricing config from Firestore.
- * Auto-seeds default config if document doesn't exist (first-run setup).
- */
 export async function getPricingConfig() {
   try {
     const doc = await db.collection('config').doc('pricing').get();
-    
     if (!doc.exists) {
-      // First run: seed default pricing
       await db.collection('config').doc('pricing').set(DEFAULT_PRICING);
       return DEFAULT_PRICING;
     }
-    
     return doc.data();
   } catch (error) {
     console.error('Error reading pricing from Firestore:', error);
-    // Return defaults as fallback so the app never fully breaks
     return DEFAULT_PRICING;
   }
 }
 
-/**
- * Save pricing config to Firestore.
- */
 export async function savePricingConfig(data: {
   rates: {
     cricketDay: number;
@@ -71,22 +59,15 @@ export async function savePricingConfig(data: {
   workingHours?: { start: number; end: number };
   sportAvailability?: { cricket: boolean; football7s: boolean; football11s: boolean };
 }) {
-  try {
-    const pricingData = {
-      workingHours: data.workingHours || { start: 0, end: 24 },
-      sportAvailability: data.sportAvailability || { cricket: true, football7s: true, football11s: true },
-      dayNightCutoffHour: data.dayNightCutoffHour || 18,
-      rates: data.rates,
-      lastUpdated: new Date().toISOString(),
-    };
-
-    await db.collection('config').doc('pricing').set(pricingData, { merge: true });
-    
-    return { success: true, lastUpdated: pricingData.lastUpdated };
-  } catch (error: any) {
-    console.error('Error saving pricing to Firestore:', error);
-    throw new Error(`Failed to save pricing: ${error?.message || String(error)}`);
-  }
+  const pricingData = {
+    workingHours: data.workingHours || { start: 0, end: 24 },
+    sportAvailability: data.sportAvailability || { cricket: true, football7s: true, football11s: true },
+    dayNightCutoffHour: data.dayNightCutoffHour ?? 18,
+    rates: data.rates,
+    lastUpdated: new Date().toISOString(),
+  };
+  await db.collection('config').doc('pricing').set(pricingData, { merge: true });
+  return { success: true, lastUpdated: pricingData.lastUpdated };
 }
 
 export { db };

@@ -110,6 +110,9 @@ const Admin = () => {
   const [adminBookingCustomerName, setAdminBookingCustomerName] = useState("");
   const [adminBookingCustomerPhone, setAdminBookingCustomerPhone] = useState("");
   const [adminBookingAmount, setAdminBookingAmount] = useState("");
+  const [tournamentStartHour, setTournamentStartHour] = useState(9);
+  const [tournamentEndHour, setTournamentEndHour] = useState(21);
+  const [tournamentSport, setTournamentSport] = useState<'cricket' | 'football'>('cricket');
   
   // Day/Night Pricing
   const [rates, setRates] = useState<Rates>({
@@ -608,7 +611,86 @@ const Admin = () => {
                   />
                 </div>
               </div>
-              {adminBookingDate && (
+              {adminBookingDate && (adminBookingReason === 'Tournament' || adminBookingReason === 'Camp') && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl mb-2">
+                    <p className="text-sm text-amber-800 font-medium">📋 {adminBookingReason} booking — select a time range and sport. All slots within the range will be booked.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700">Start Time</label>
+                      <select
+                        value={tournamentStartHour}
+                        onChange={(e) => setTournamentStartHour(Number(e.target.value))}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                      >
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const ampm = i >= 12 && i < 24 ? 'PM' : 'AM';
+                          let h12 = i % 12; h12 = h12 ? h12 : 12;
+                          return <option key={i} value={i}>{String(h12).padStart(2, '0')}:00 {ampm}</option>;
+                        })}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700">End Time</label>
+                      <select
+                        value={tournamentEndHour}
+                        onChange={(e) => setTournamentEndHour(Number(e.target.value))}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                      >
+                        {Array.from({ length: 24 }, (_, i) => {
+                          const h = i + 1;
+                          const displayH = h === 24 ? 0 : h;
+                          const ampm = displayH >= 12 && displayH < 24 ? 'PM' : 'AM';
+                          let h12 = displayH % 12; h12 = h12 ? h12 : 12;
+                          const label = h === 24 ? '12:00 AM (Next day)' : `${String(h12).padStart(2, '0')}:00 ${ampm}${h > 24 ? ' (Next day)' : ''}`;
+                          return <option key={h} value={h}>{label}</option>;
+                        })}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700">Sport</label>
+                      <select
+                        value={tournamentSport}
+                        onChange={(e) => setTournamentSport(e.target.value as 'cricket' | 'football')}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                      >
+                        <option value="cricket">Cricket</option>
+                        <option value="football">Football</option>
+                      </select>
+                    </div>
+                  </div>
+                  {/* Summary */}
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                      <div><span className="text-gray-500">Date:</span> <span className="font-semibold text-gray-900">{adminBookingDate}</span></div>
+                      <div><span className="text-gray-500">Duration:</span> <span className="font-semibold text-gray-900">{(() => { const hrs = tournamentEndHour > tournamentStartHour ? tournamentEndHour - tournamentStartHour : (24 - tournamentStartHour) + tournamentEndHour; return `${hrs} hours`; })()}</span></div>
+                      <div><span className="text-gray-500">Sport:</span> <span className="font-semibold text-gray-900 capitalize">{tournamentSport}</span></div>
+                      <div><span className="text-gray-500">Amount:</span> <span className="font-semibold text-[#65a30d]">₹{adminBookingAmount || '—'}</span></div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Generate slot IDs for the time range (handles overnight like 9am to 5am next day)
+                      const slots: string[] = [];
+                      if (tournamentEndHour > tournamentStartHour) {
+                        for (let h = tournamentStartHour; h < tournamentEndHour; h++) slots.push(`${h}-${h+1}`);
+                      } else {
+                        // Overnight: e.g. 9 to 5 means 9→24 then 0→5
+                        for (let h = tournamentStartHour; h < 24; h++) slots.push(`${h}-${h+1}`);
+                        for (let h = 0; h < tournamentEndHour; h++) slots.push(`${h}-${h+1}`);
+                      }
+                      createAdminBooking(tournamentSport, slots);
+                    }}
+                    disabled={saving || !adminBookingCustomerName || !adminBookingDate}
+                    className="w-full py-3.5 bg-gradient-to-r from-[#84cc16] to-[#65a30d] text-white font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-[#84cc16]/30 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-base"
+                  >
+                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                    Create {adminBookingReason} Booking
+                  </button>
+                </div>
+              )}
+              {adminBookingDate && adminBookingReason === 'Phone Booking' && (
                 <div className="space-y-4">
                   <div className="flex gap-4 mb-4">
                     <button

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Calendar as CalendarIcon, Phone, Check, Loader2, Shield, User, Sun, Lightbulb } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
@@ -37,35 +37,48 @@ const formatTime12Hour = (timeStr: string) => {
 };
 
 const CricketSVG = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
     {/* Bat */}
-    <rect x="7" y="3" width="4" height="13" rx="1" transform="rotate(45 9 9.5)" />
-    <path d="M5.5 17L3 19.5" />
+    <rect x="10" y="28" width="8" height="26" rx="3" fill="currentColor" opacity="0.85" transform="rotate(-15 14 41)" />
+    <rect x="12" y="18" width="4" height="12" rx="1.5" fill="currentColor" opacity="0.6" transform="rotate(-15 14 24)" />
     {/* Ball */}
-    <circle cx="17" cy="17" r="3" />
-    <path d="M15.5 15.5L18.5 18.5" />
+    <circle cx="44" cy="20" r="10" fill="currentColor" opacity="0.9" />
+    <path d="M37 14 C40 20 48 20 51 14" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6" />
+    <path d="M37 26 C40 20 48 20 51 26" stroke="white" strokeWidth="1.5" fill="none" opacity="0.6" />
   </svg>
 );
 
 const FootballSVG = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 7l3 4.5-1.5 5h-3l-1.5-5L12 7z" />
-    <path d="M12 7v-5" />
-    <path d="M15 11.5l4.5-2.5" />
-    <path d="M9 11.5L4.5 9" />
-    <path d="M13.5 16.5L16 21" />
-    <path d="M10.5 16.5L8 21" />
+  <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Ball */}
+    <circle cx="32" cy="32" r="22" fill="currentColor" opacity="0.15" />
+    <circle cx="32" cy="32" r="22" stroke="currentColor" strokeWidth="2.5" fill="none" />
+    {/* Pentagon pattern */}
+    <path d="M32 18L40 24L38 34H26L24 24Z" fill="currentColor" opacity="0.7" />
+    {/* Lines to edge */}
+    <line x1="32" y1="18" x2="32" y2="10" stroke="currentColor" strokeWidth="2" />
+    <line x1="40" y1="24" x2="52" y2="21" stroke="currentColor" strokeWidth="2" />
+    <line x1="38" y1="34" x2="48" y2="44" stroke="currentColor" strokeWidth="2" />
+    <line x1="26" y1="34" x2="16" y2="44" stroke="currentColor" strokeWidth="2" />
+    <line x1="24" y1="24" x2="12" y2="21" stroke="currentColor" strokeWidth="2" />
   </svg>
 );
 
 const Booking = () => {
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   
-  const [sport, setSport] = useState<"cricket" | "football-7s" | "football-11s">("cricket");
+  // Read ?sport= query param to pre-select sport (e.g. from Services page)
+  const initialSport = (() => {
+    const sp = searchParams.get('sport');
+    if (sp === 'football-7s' || sp === 'football-11s') return sp;
+    if (sp === 'football') return 'football-7s' as const;
+    return 'cricket' as const;
+  })();
+  const [sport, setSport] = useState<"cricket" | "football-7s" | "football-11s">(initialSport);
   // Use IST date for initial value — toISOString() gives UTC which is wrong for users after midnight IST
   const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }));
   const [selectedSlots, setSelectedSlots] = useState<Array<{slotId: string}>>([]);
@@ -444,7 +457,7 @@ const Booking = () => {
                               <div className={`font-semibold text-sm ${isSel ? 'text-gray-900' : slot.available ? 'text-gray-800' : 'text-gray-400'}`}>
                                 {startTime} – {endTime}
                               </div>
-                              {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason === 'Booking opens Friday' ? slot.unavailableReason : 'Booked'}</div>}
+                              {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason === 'Booking opens Friday' ? slot.unavailableReason : (slot.unavailableReason === 'Tournament' || slot.unavailableReason === 'Camp') ? slot.unavailableReason : 'Booked'}</div>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2.5">
