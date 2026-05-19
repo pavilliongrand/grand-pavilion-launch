@@ -52,11 +52,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const calendar = google.calendar({ version: 'v3', auth });
 
     const blockedEvents = [];
-    for (const slotId of slotIds) {
+    for (let i = 0; i < slotIds.length; i++) {
+      const slotId = slotIds[i];
       const [startHour] = slotId.split('-').map(Number);
       const endHour = startHour + 1;
       const startTime = new Date(`${date}T${String(startHour).padStart(2, '0')}:00:00+05:30`);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // Accurately adds 1 hour regardless of timezone
+
+      // For multi-slot bookings (tournaments/camps), put the total amount ONLY on the
+      // first slot to avoid inflating revenue. Subsequent slots get amount=0.
+      const slotAmount = (isBooking && amount && i === 0) ? amount.toString() : '0';
 
       const event = {
         summary: isBooking ? `${sport.toUpperCase()} - ${reason}` : `BLOCKED - ${sport.toUpperCase()}`,
@@ -73,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             customerPhone: customerPhone || '',
             name: customerName || reason,
             phone: customerPhone || '',
-            amount: isBooking && amount ? amount.toString() : '0',
+            amount: slotAmount,
           },
         },
         colorId: isBooking ? (sport === 'cricket' ? '9' : '11') : '11',
