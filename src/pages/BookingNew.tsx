@@ -36,13 +36,7 @@ const formatTime12Hour = (timeStr: string) => {
   return `${formatPart(parts[0])} - ${formatPart(parts[1])}`;
 };
 
-const CricketSVG = ({ className }: { className?: string }) => (
-  <img src="/cricket-icon.avif" alt="Cricket" className={`${className} object-contain`} />
-);
 
-const FootballSVG = ({ className }: { className?: string }) => (
-  <img src="/football-icon.jpg" alt="Football" className={`${className} object-contain`} />
-);
 
 const Booking = () => {
   const [searchParams] = useSearchParams();
@@ -279,7 +273,7 @@ const Booking = () => {
       {/* Logo Header */}
       <div className="bg-white px-4 py-5 flex items-center justify-center border-b border-gray-100 mb-2">
         <Link to="/" className="flex flex-col items-center gap-1.5">
-          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-16 w-auto object-contain brightness-0" />
+          <img src="/logo-transparent.png" alt="Grand Pavilion" className="h-24 w-auto object-contain" />
         </Link>
       </div>
 
@@ -302,9 +296,9 @@ const Booking = () => {
           <div className="px-4 mb-5">
             <div className="flex gap-2.5 overflow-x-auto pb-1 hide-scrollbar">
               {[
-                { value: "cricket", label: "Cricket", Icon: CricketSVG },
-                { value: "football-7s", label: "Football (7s)", Icon: FootballSVG },
-                { value: "football-11s", label: "Football (11s)", Icon: FootballSVG },
+                { value: "cricket", label: "Cricket", emoji: "🏏" },
+                { value: "football-7s", label: "Football (7s)", emoji: "⚽" },
+                { value: "football-11s", label: "Football (11s)", emoji: "⚽" },
               ].map(s => {
                 const priceRange = getSportPriceRange(s.value);
                 const isSel = sport === s.value;
@@ -317,8 +311,8 @@ const Booking = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className={`w-6 h-6 flex items-center justify-center ${isSel ? 'text-[#84cc16]' : 'text-gray-400'}`}>
-                        <s.Icon className="w-full h-full" />
+                      <span className="text-lg leading-none">
+                        {s.emoji}
                       </span>
                       {isSel && (
                         <div className="w-5 h-5 bg-[#84cc16] rounded-full flex items-center justify-center">
