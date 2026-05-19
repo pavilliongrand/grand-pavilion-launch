@@ -457,7 +457,7 @@ const Booking = () => {
                               <div className={`font-semibold text-sm ${isSel ? 'text-gray-900' : slot.available ? 'text-gray-800' : 'text-gray-400'}`}>
                                 {startTime} – {endTime}
                               </div>
-                              {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason === 'Booking opens Friday' ? slot.unavailableReason : (slot.unavailableReason === 'Tournament' || slot.unavailableReason === 'Camp') ? slot.unavailableReason : 'Booked'}</div>}
+                              {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason === 'Booking opens Friday' ? slot.unavailableReason : (slot.unavailableReason === 'Tournament' || slot.unavailableReason === 'Camp') ? slot.unavailableReason : slot.unavailableReason?.startsWith('Maintenance') ? 'Maintenance' : 'Booked'}</div>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2.5">
