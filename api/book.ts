@@ -114,8 +114,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ── 4. Check sport availability ────────────────────────
     const sportAvailability = pricingData.sportAvailability || {};
-    const sportKey = payload.sport === 'cricket' ? 'cricket' : payload.sport === 'football-7s' ? 'football7s' : 'football11s';
-    const sportEnabled = sportAvailability[sportKey] ?? sportAvailability['football'] ?? true;
+    const sportEnabled1 = sportAvailability['football7s'] ?? sportAvailability['football'] ?? true;
+    const sportEnabled2 = sportAvailability['football7s_2'] ?? sportAvailability['football'] ?? true;
+    const is7s = payload.sport === 'football-7s';
+    const maxBookingsFor7s = is7s ? ((sportEnabled1 ? 1 : 0) + (sportEnabled2 ? 1 : 0)) : 1;
+
+    const sportKey = payload.sport === 'cricket' ? 'cricket' : payload.sport === 'football-11s' ? 'football11s' : 'football7s';
+    const sportEnabled = is7s ? (maxBookingsFor7s > 0) : (sportAvailability[sportKey] ?? sportAvailability['football'] ?? true);
+    
     if (!sportEnabled) {
       const sportLabel = payload.sport === 'cricket' ? 'Cricket' : payload.sport === 'football-7s' ? 'Football 7s' : 'Football 11s';
       return res.status(400).json({
@@ -131,15 +137,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     // ── 6. Double-booking prevention (occupiedSlotDetails already fetched above) ──────
-    // For football-7s: allow up to 2 bookings per slot (half-ground sharing)
+    // For football-7s: allow up to maxBookingsFor7s bookings per slot (half-ground sharing)
     // For cricket / football-11s: any existing booking blocks the slot
     const occupiedBySlotId = new Map(occupiedSlotDetails.map((s) => [s.slotId, s]));
     for (const slot of payload.slots) {
       const occupied = occupiedBySlotId.get(slot.slotId);
       if (occupied) {
         if (payload.sport === 'football-7s' && !occupied.blocked && occupied.bookingSport === 'football-7s') {
-          // 7s half-ground: allow if fewer than 2 bookings
-          if (occupied.bookingCount >= 2) {
+          // 7s half-ground: allow if fewer than maxBookings
+          if (occupied.bookingCount >= maxBookingsFor7s) {
             return res.status(409).json({
               error: 'Both 7-a-side spots for this slot are taken. Please select a different time.',
             });

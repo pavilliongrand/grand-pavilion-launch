@@ -129,7 +129,7 @@ const Admin = () => {
   });
   const [dayNightCutoffHour, setDayNightCutoffHour] = useState(18);
   const [workingHours, setWorkingHours] = useState<WorkingHours>({ start: 0, end: 24 });
-  const [sportAvailability, setSportAvailability] = useState({ cricket: true, football7s: true, football11s: true });
+  const [sportAvailability, setSportAvailability] = useState({ cricket: true, football7s: true, football7s_2: true, football11s: true });
 
   // Get signed admin token from session for API authentication
   const getAdminToken = () => {
@@ -244,6 +244,7 @@ const Admin = () => {
         setSportAvailability({
           cricket: sa.cricket ?? true,
           football7s: sa.football7s ?? sa.football ?? true,
+          football7s_2: sa.football7s_2 ?? sa.football ?? true,
           football11s: sa.football11s ?? sa.football ?? true,
         });
       }
@@ -1114,10 +1115,11 @@ const Admin = () => {
                     </span>
                   </div>
                 </div>
+                {/* Football 7s Pitch 1 */}
                 <div className="p-4 bg-white rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football (7s)</h4>
+                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football (7s) - Pitch 1</h4>
                       <p className="text-xs text-gray-500">Allow 7-a-side bookings</p>
                     </div>
                     <button
@@ -1141,6 +1143,35 @@ const Admin = () => {
                     </span>
                   </div>
                 </div>
+                {/* Football 7s Pitch 2 */}
+                <div className="p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football (7s) - Pitch 2</h4>
+                      <p className="text-xs text-gray-500">Allow 2nd 7-a-side pitch bookings</p>
+                    </div>
+                    <button
+                      onClick={() => setSportAvailability(prev => ({ ...prev, football7s_2: !prev.football7s_2 }))}
+                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                        sportAvailability.football7s_2 ? 'bg-green-500' : 'bg-zinc-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                          sportAvailability.football7s_2 ? 'translate-x-7' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="mt-3 text-xs">
+                    <span className={`font-semibold ${
+                      sportAvailability.football7s_2 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {sportAvailability.football7s_2 ? '✓ Enabled' : '✗ Disabled'}
+                    </span>
+                  </div>
+                </div>
+                {/* Football 11s */}
                 <div className="p-4 bg-white rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>

@@ -58,10 +58,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ]);
 
     const sportAvailability = pricingData.sportAvailability || { cricket: true, football: true };
+    const sportEnabled1 = sportAvailability['football7s'] ?? sportAvailability['football'] ?? true;
+    const sportEnabled2 = sportAvailability['football7s_2'] ?? sportAvailability['football'] ?? true;
+
+    const is7s = sport === 'football-7s';
+    const maxBookingsForSport = is7s ? ((sportEnabled1 ? 1 : 0) + (sportEnabled2 ? 1 : 0)) : 1;
 
     // Check availability per specific football variant, with backward-compat fallback to legacy 'football' key
-    const sportKey = sport === 'cricket' ? 'cricket' : sport === 'football-7s' ? 'football7s' : 'football11s';
-    const sportEnabled = sportAvailability[sportKey] ?? sportAvailability['football'] ?? true;
+    const sportKey = sport === 'cricket' ? 'cricket' : sport === 'football-11s' ? 'football11s' : 'football7s';
+    const sportEnabled = is7s ? (maxBookingsForSport > 0) : (sportAvailability[sportKey] ?? sportAvailability['football'] ?? true);
+    
     if (!sportEnabled) {
       const sportLabel = sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football 7s' : 'Football 11s';
       return res.status(400).json({
@@ -75,8 +81,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // occupiedSlots already fetched in parallel above
     const occupiedBySlotId = new Map(occupiedSlots.map((slot) => [slot.slotId, slot]));
-
-    const maxBookingsForSport = sport === 'football-7s' ? 2 : 1;
 
     // Mark occupied slots as unavailable
     // For football-7s: a slot is available if bookingCount < 2 (half-ground sharing)
@@ -102,15 +106,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
       }
 
-      // For football-7s: allow up to 2 bookings on the same slot
+      // For football-7s: allow up to maxBookingsForSport bookings on the same slot
       if (sport === 'football-7s' && occupied.bookingSport === 'football-7s') {
-        const isStillAvailable = slot.available && occupied.bookingCount < 2;
+        const isStillAvailable = slot.available && occupied.bookingCount < maxBookingsForSport;
         return {
           ...slot,
           available: isStillAvailable,
           unavailableReason: isStillAvailable ? undefined : 'Booked',
           bookingCount: occupied.bookingCount,
-          maxBookings: 2,
+          maxBookings: maxBookingsForSport,
         };
       }
 
