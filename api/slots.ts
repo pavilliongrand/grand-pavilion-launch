@@ -12,7 +12,12 @@ interface TimeSlot {
   available: boolean;
   price: number;
   unavailableReason?: string;
+  /** Current number of bookings on this slot (for 7s half-ground) */
+  bookingCount?: number;
+  /** Maximum bookings allowed on this slot (2 for 7s, 1 for others) */
+  maxBookings?: number;
 }
+
 
 const QuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
@@ -71,12 +76,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // occupiedSlots already fetched in parallel above
     const occupiedBySlotId = new Map(occupiedSlots.map((slot) => [slot.slotId, slot]));
 
+    const maxBookingsForSport = sport === 'football-7s' ? 2 : 1;
+
     // Mark occupied slots as unavailable
-    const availableSlots = slots.map((slot) => ({
-      ...slot,
-      available: slot.available && !occupiedBySlotId.has(slot.id),
-      unavailableReason: occupiedBySlotId.get(slot.id)?.reason,
-    }));
+    // For football-7s: a slot is available if bookingCount < 2 (half-ground sharing)
+    // For cricket / football-11s: any booking on the slot (regardless of sport) blocks it
+    const availableSlots = slots.map((slot) => {
+      const occupied = occupiedBySlotId.get(slot.id);
+      if (!occupied) {
+        return {
+          ...slot,
+          bookingCount: 0,
+          maxBookings: maxBookingsForSport,
+        };
+      }
+
+      // Admin blocks always make unavailable
+      if (occupied.blocked) {
+        return {
+          ...slot,
+          available: false,
+          unavailableReason: occupied.reason,
+          bookingCount: 0,
+          maxBookings: maxBookingsForSport,
+        };
+      }
+
+      // For football-7s: allow up to 2 bookings on the same slot
+      if (sport === 'football-7s' && occupied.bookingSport === 'football-7s') {
+        const isStillAvailable = slot.available && occupied.bookingCount < 2;
+        return {
+          ...slot,
+          available: isStillAvailable,
+          unavailableReason: isStillAvailable ? undefined : 'Booked',
+          bookingCount: occupied.bookingCount,
+          maxBookings: 2,
+        };
+      }
+
+      // Cricket / 11s or any non-7s booking: fully blocks the slot
+      return {
+        ...slot,
+        available: false,
+        unavailableReason: occupied.reason,
+        bookingCount: occupied.bookingCount,
+        maxBookings: maxBookingsForSport,
+      };
+    });
 
     return res.status(200).json({ slots: availableSlots });
   } catch (error) {

@@ -23,6 +23,7 @@ import {
 
 interface Booking {
   id: string;
+  ids: string[]; // all calendar event IDs (multi-slot bookings have one per slot)
   name: string;
   sport: string;
   date: string;
@@ -114,6 +115,12 @@ const Admin = () => {
   const [tournamentEndHour, setTournamentEndHour] = useState(21);
   const [tournamentSport, setTournamentSport] = useState<'cricket' | 'football'>('cricket');
   
+  // Edit Booking
+  const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
+  const [editStartHour, setEditStartHour] = useState(9);
+  const [editEndHour, setEditEndHour] = useState(10);
+  const [editAmount, setEditAmount] = useState("");
+
   // Day/Night Pricing
   const [rates, setRates] = useState<Rates>({
     cricketDay: 1600, cricketNight: 1950,
@@ -195,23 +202,21 @@ const Admin = () => {
     }
   };
 
-  const toggleBookingStatus = async (bookingId: string, currentStatus: string) => {
+  const toggleBookingStatus = async (bookingIds: string[], currentStatus: string) => {
     const newStatus = currentStatus === 'confirmed' ? 'pending' : 'confirmed';
     try {
-      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
-      const res = await fetch(`/api/admin/bookings`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...adminHeaders()
-        },
-        body: JSON.stringify({ id: bookingId, status: newStatus })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update booking status');
+      setBookings(prev => prev.map(b => bookingIds.includes(b.id) ? { ...b, status: newStatus } : b));
+      for (const id of bookingIds) {
+        const res = await fetch(`/api/admin/bookings`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...adminHeaders() },
+          body: JSON.stringify({ id, status: newStatus })
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to update booking status');
+        }
       }
-      console.log('Booking status updated:', newStatus);
     } catch (err: any) {
       console.error('Status update error:', err);
       alert(`Failed to update status: ${err.message}`);
@@ -390,27 +395,65 @@ const Admin = () => {
     }
   };
 
-  const cancelBooking = async (bookingId: string) => {
+  const cancelBooking = async (bookingIds: string[]) => {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
-    
     try {
-      const response = await fetch(`/api/admin/bookings?id=${bookingId}`, {
-        method: 'DELETE',
-        headers: adminHeaders()
-      });
-      const data = await response.json().catch(() => ({}));
-      
-      if (response.ok && data.success) {
-        alert('✅ Booking cancelled successfully!');
-        await fetchBookings();
-      } else {
-        console.error('Cancel failed:', data);
-        alert(`Failed to cancel booking: ${data.error || 'Unknown error'}`);
+      for (const id of bookingIds) {
+        await fetch(`/api/admin/bookings?id=${id}`, { method: 'DELETE', headers: adminHeaders() });
       }
+      alert('✅ Booking cancelled successfully!');
+      await fetchBookings();
     } catch (err: any) {
       console.error('Cancel error:', err);
       alert(`Failed to cancel booking: ${err.message}`);
     }
+  };
+
+  const updateBooking = async (booking: Booking & { ids: string[] }) => {
+    if (!confirm('Save changes to this booking?')) return;
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/update-booking', {
+        method: 'PUT',
+        headers: adminHeaders(),
+        body: JSON.stringify({
+          eventIds: booking.ids,
+          newStartHour: editStartHour,
+          newEndHour: editEndHour,
+          newAmount: Number(editAmount) || booking.amount,
+          date: booking.date,
+          sport: booking.sport,
+          customerName: booking.name,
+          customerPhone: booking.phone,
+        })
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update booking');
+      }
+      alert('✅ Booking updated successfully!');
+      setEditingBookingId(null);
+      await fetchBookings();
+    } catch (err: any) {
+      console.error('Update booking error:', err);
+      alert(`Failed to update booking: ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEditBooking = (booking: Booking & { ids: string[] }) => {
+    // Parse the earliest start and latest end from slot IDs
+    const hours = booking.slots.map(s => {
+      const parts = s.split('-').map(Number);
+      return { start: parts[0], end: parts[1] };
+    });
+    const minStart = Math.min(...hours.map(h => h.start));
+    const maxEnd = Math.max(...hours.map(h => h.end));
+    setEditStartHour(minStart);
+    setEditEndHour(maxEnd);
+    setEditAmount(String(booking.amount));
+    setEditingBookingId(booking.id);
   };
 
   const updateRate = (key: keyof Rates, value: number) => {
@@ -450,6 +493,84 @@ const Admin = () => {
   };
 
   const getTodayDate = () => new Date().toISOString().split('T')[0];
+
+  // Format hour to 12h AM/PM
+  const formatHour12 = (h: number) => {
+    const ampm = h >= 12 && h < 24 ? 'PM' : 'AM';
+    let h12 = h % 12;
+    h12 = h12 ? h12 : 12;
+    return `${String(h12).padStart(2, '0')}:00 ${ampm}`;
+  };
+
+  // Group individual slot events into single booking cards (name+phone+date+sport)
+  // Sorts: upcoming bookings first (by nearest start time), completed bookings at bottom
+  const groupedBookings = (() => {
+    const map = new Map<string, Booking & { ids: string[] }>();
+    for (const b of bookings) {
+      const key = `${b.name}|${b.phone}|${b.date}|${b.sport}`;
+      if (map.has(key)) {
+        const g = map.get(key)!;
+        g.ids.push(b.id);
+        g.slots.push(...b.slots);
+        g.slotTimes.push(...b.slotTimes);
+        g.amount += b.amount;
+      } else {
+        map.set(key, { ...b, ids: [b.id] });
+      }
+    }
+
+    const now = new Date();
+    const nowIST = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const todayStr = `${nowIST.getFullYear()}-${String(nowIST.getMonth() + 1).padStart(2, '0')}-${String(nowIST.getDate()).padStart(2, '0')}`;
+    const currentHour = nowIST.getHours();
+
+    return Array.from(map.values())
+      .map(g => {
+        // Sort slot times and build combined range
+        const sortedSlots = [...g.slots].sort((a, z) => {
+          const aStart = parseInt(a.split('-')[0]);
+          const zStart = parseInt(z.split('-')[0]);
+          return aStart - zStart;
+        });
+        const slotHours = sortedSlots.map(s => {
+          const parts = s.split('-').map(Number);
+          return { start: parts[0], end: parts[1] };
+        });
+        const earliestStart = slotHours.length > 0 ? Math.min(...slotHours.map(h => h.start)) : 0;
+        const latestEnd = slotHours.length > 0 ? Math.max(...slotHours.map(h => h.end)) : 0;
+        // Combine into a single range string
+        const combinedTimeRange = slotHours.length > 0
+          ? `${formatHour12(earliestStart)} – ${formatHour12(latestEnd)}`
+          : '';
+
+        // Determine if booking is completed (all slot end times have passed)
+        const isCompleted = g.date < todayStr || (g.date === todayStr && latestEnd <= currentHour);
+
+        return {
+          ...g,
+          slots: sortedSlots,
+          slotTimes: [...g.slotTimes].sort((a, z) => parseInt(a) - parseInt(z)),
+          combinedTimeRange,
+          earliestStart,
+          latestEnd,
+          isCompleted,
+        };
+      })
+      .sort((a, b) => {
+        // Upcoming first, completed last
+        if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+        // Within upcoming: sort by date then start hour (nearest first)
+        if (!a.isCompleted) {
+          const dateCmp = a.date.localeCompare(b.date);
+          if (dateCmp !== 0) return dateCmp;
+          return a.earliestStart - b.earliestStart;
+        }
+        // Within completed: most recently completed first
+        const dateCmp = b.date.localeCompare(a.date);
+        if (dateCmp !== 0) return dateCmp;
+        return b.latestEnd - a.latestEnd;
+      });
+  })();
 
   if (!isAuthenticated) {
     return <AdminLogin onAuthenticated={() => setIsAuthenticated(true)} />;
@@ -502,7 +623,7 @@ const Admin = () => {
               </div>
               <div>
                 <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Bookings</div>
-                <div className="text-sm sm:text-2xl font-bold text-gray-900">{bookings.length}</div>
+                <div className="text-sm sm:text-2xl font-bold text-gray-900">{groupedBookings.length}</div>
               </div>
             </div>
           </div>
@@ -515,7 +636,7 @@ const Admin = () => {
               <div>
                 <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Confirmed</div>
                 <div className="text-sm sm:text-2xl font-bold text-gray-900">
-                  {bookings.filter(b => b.status === 'confirmed').length}
+                  {groupedBookings.filter(b => b.status === 'confirmed').length}
                 </div>
               </div>
             </div>
@@ -783,54 +904,157 @@ const Admin = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {bookings.map(booking => (
-                  <div key={booking.id} className="p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-xl">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="font-semibold text-sm sm:text-base text-gray-900">{booking.name || 'N/A'}</div>
-                        <a href={`tel:${booking.phone}`} className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1">
-                          {booking.phone}
-                        </a>
+                {/* Section headers and booking cards */}
+                {(() => {
+                  const upcomingBookings = groupedBookings.filter(b => !b.isCompleted);
+                  const completedBookings = groupedBookings.filter(b => b.isCompleted);
+
+                  const renderBookingCard = (booking: typeof groupedBookings[0]) => (
+                    <div key={booking.id} className={`p-3 sm:p-4 border rounded-xl transition-all ${
+                      booking.isCompleted
+                        ? 'bg-gray-50/50 border-gray-100 opacity-70'
+                        : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <div className="font-semibold text-sm sm:text-base text-gray-900">{booking.name || 'N/A'}</div>
+                          <a href={`tel:${booking.phone}`} className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1">
+                            {booking.phone}
+                          </a>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none bg-white border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
+                            <input 
+                              type="checkbox" 
+                              checked={booking.status === 'confirmed'} 
+                              onChange={() => toggleBookingStatus(booking.ids, booking.status)}
+                              className="w-3.5 h-3.5 rounded text-[#84cc16] focus:ring-[#84cc16] cursor-pointer"
+                            />
+                            <span className="text-gray-700 font-medium">Confirmed</span>
+                          </label>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${
+                            booking.status === 'confirmed'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {booking.status}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none bg-white border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-50 transition-colors">
-                          <input 
-                            type="checkbox" 
-                            checked={booking.status === 'confirmed'} 
-                            onChange={() => toggleBookingStatus(booking.id, booking.status)}
-                            className="w-3.5 h-3.5 rounded text-[#84cc16] focus:ring-[#84cc16] cursor-pointer"
-                          />
-                          <span className="text-gray-700 font-medium">Confirmed</span>
-                        </label>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${
-                          booking.status === 'confirmed'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {booking.status}
-                        </span>
+                      <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm mb-2 text-gray-900">
+                        <div><span className="text-gray-500">Sport:</span> <span className="capitalize font-medium">{booking.sport}</span></div>
+                        <div><span className="text-gray-500">Date:</span> <span className="font-medium">{booking.date}</span></div>
+                        <div><span className="text-gray-500">Time:</span> <span className="font-medium">{booking.combinedTimeRange}</span></div>
+                        <div><span className="text-gray-500">Amount:</span> <span className="font-semibold text-[#65a30d]">₹{booking.amount}</span></div>
+                      </div>
+                      {booking.slots.length > 1 && (
+                        <div className="text-[10px] sm:text-xs text-gray-400 mb-2">
+                          {booking.slots.length} slots combined
+                        </div>
+                      )}
+
+                      {/* Edit form (inline) */}
+                      {editingBookingId === booking.id && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-2 space-y-3">
+                          <div className="text-sm font-semibold text-blue-800">Edit Booking</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-[10px] font-semibold mb-1 text-gray-600">Start</label>
+                              <select
+                                value={editStartHour}
+                                onChange={(e) => setEditStartHour(Number(e.target.value))}
+                                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-blue-400 focus:outline-none"
+                              >
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <option key={i} value={i}>{formatHour12(i)}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-semibold mb-1 text-gray-600">End</label>
+                              <select
+                                value={editEndHour}
+                                onChange={(e) => setEditEndHour(Number(e.target.value))}
+                                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-blue-400 focus:outline-none"
+                              >
+                                {Array.from({ length: 24 }, (_, i) => i + 1).map(h => (
+                                  <option key={h} value={h}>{formatHour12(h === 24 ? 0 : h)}{h === 24 ? ' (Next)' : ''}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-semibold mb-1 text-gray-600">Amount (₹)</label>
+                              <input
+                                type="number"
+                                value={editAmount}
+                                onChange={(e) => setEditAmount(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-sm focus:border-blue-400 focus:outline-none"
+                                min="0"
+                                step="50"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => updateBooking(booking)}
+                              disabled={saving || editStartHour >= editEndHour}
+                              className="flex-1 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                            >
+                              {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingBookingId(null)}
+                              className="flex-1 py-1.5 bg-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 pt-2 border-t border-gray-200">
+                        <button
+                          onClick={() => startEditBooking(booking)}
+                          className="px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 border border-blue-200 rounded-lg transition-all flex items-center gap-1"
+                        >
+                          <Edit className="w-3 h-3" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => cancelBooking(booking.ids)}
+                          className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-all flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Cancel
+                        </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm mb-2 text-gray-900">
-                      <div><span className="text-gray-500">Sport:</span> <span className="capitalize font-medium">{booking.sport}</span></div>
-                      <div><span className="text-gray-500">Date:</span> <span className="font-medium">{booking.date}</span></div>
-                      <div><span className="text-gray-500">Slots:</span> <span className="font-medium">{booking.slots.length}</span></div>
-                      <div><span className="text-gray-500">Amount:</span> <span className="font-semibold text-[#65a30d]">₹{booking.amount}</span></div>
-                    </div>
-                    {booking.slotTimes && booking.slotTimes.length > 0 && (
-                      <div className="text-[10px] sm:text-xs text-gray-500 mb-2">{booking.slotTimes.join(', ')}</div>
-                    )}
-                    <div className="flex gap-2 pt-2 border-t border-gray-200">
-                      <button
-                        onClick={() => cancelBooking(booking.id)}
-                        className="px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-all flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+
+                  return (
+                    <>
+                      {upcomingBookings.length > 0 && (
+                        <>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            <span className="text-sm font-bold text-gray-700">Upcoming ({upcomingBookings.length})</span>
+                          </div>
+                          {upcomingBookings.map(renderBookingCard)}
+                        </>
+                      )}
+                      {completedBookings.length > 0 && (
+                        <>
+                          <div className="flex items-center gap-2 mt-6 mb-2 pt-4 border-t border-gray-200">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full" />
+                            <span className="text-sm font-bold text-gray-400">Completed ({completedBookings.length})</span>
+                          </div>
+                          {completedBookings.map(renderBookingCard)}
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
             </div>

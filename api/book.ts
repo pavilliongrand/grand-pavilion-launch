@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
-import { createCalendarBooking, getOccupiedSlotsFromCalendar, deleteCalendarBooking } from './lib/calendarService.js';
+import { createCalendarBooking, getOccupiedSlotDetailsFromCalendar, deleteCalendarBooking } from './lib/calendarService.js';
 import { getPricingConfig } from './lib/firestore.js';
 import { verifyFirebaseToken } from './lib/verifyFirebaseToken.js';
 import { applyCors } from './lib/cors.js';
@@ -98,10 +98,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Cannot book a date in the past' });
     }
 
+    // ── 3b. Validate date is within the 2-week booking window ─────────────────────────────────
+    const maxDate = new Date(istNow);
+    maxDate.setDate(istNow.getDate() + 13); // today + 13 more days = 2-week window
+    const istMaxDate = `${maxDate.getFullYear()}-${String(maxDate.getMonth() + 1).padStart(2, '0')}-${String(maxDate.getDate()).padStart(2, '0')}`;
+    if (payload.date > istMaxDate) {
+      return res.status(400).json({ error: 'Bookings can only be made up to 2 weeks in advance.' });
+    }
+
     // ── 4 + 6. Fetch pricing config and occupied slots in parallel (saves ~1s toward Vercel 10s limit) ──
-    const [pricingData, occupiedSlots] = await Promise.all([
+    const [pricingData, occupiedSlotDetails] = await Promise.all([
       getPricingConfig(),
-      getOccupiedSlotsFromCalendar(payload.date, payload.sport),
+      getOccupiedSlotDetailsFromCalendar(payload.date, payload.sport),
     ]);
 
     // ── 4. Check sport availability ────────────────────────
@@ -122,12 +130,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pricingData
     );
 
-    // ── 6. Double-booking prevention (occupiedSlots already fetched above) ──────
+    // ── 6. Double-booking prevention (occupiedSlotDetails already fetched above) ──────
+    // For football-7s: allow up to 2 bookings per slot (half-ground sharing)
+    // For cricket / football-11s: any existing booking blocks the slot
+    const occupiedBySlotId = new Map(occupiedSlotDetails.map((s) => [s.slotId, s]));
     for (const slot of payload.slots) {
-      if (occupiedSlots.includes(slot.slotId)) {
-        return res.status(409).json({
-          error: 'This slot just got booked. Please refresh and select a different time.',
-        });
+      const occupied = occupiedBySlotId.get(slot.slotId);
+      if (occupied) {
+        if (payload.sport === 'football-7s' && !occupied.blocked && occupied.bookingSport === 'football-7s') {
+          // 7s half-ground: allow if fewer than 2 bookings
+          if (occupied.bookingCount >= 2) {
+            return res.status(409).json({
+              error: 'Both 7-a-side spots for this slot are taken. Please select a different time.',
+            });
+          }
+        } else {
+          // Cricket, 11s, or admin block: no double booking
+          return res.status(409).json({
+            error: 'This slot just got booked. Please refresh and select a different time.',
+          });
+        }
       }
     }
 

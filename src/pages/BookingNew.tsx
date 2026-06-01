@@ -12,6 +12,10 @@ interface TimeSlot {
   available: boolean;
   price: number;
   unavailableReason?: string;
+  /** Current bookings on this slot (for 7s half-ground) */
+  bookingCount?: number;
+  /** Max bookings allowed (2 for 7s, 1 for others) */
+  maxBookings?: number;
 }
 
 const formatTime12Hour = (timeStr: string) => {
@@ -242,20 +246,9 @@ const Booking = () => {
   const getNext7Days = () => {
     const dates = [];
     const today = new Date();
-    const todayDay = today.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
-
-    let daysToAdd = 0;
-    if (todayDay === 5) {
-      daysToAdd = 7; // Fri to next Fri
-    } else if (todayDay === 6) {
-      daysToAdd = 6; // Sat to next Fri
-    } else if (todayDay === 0) {
-      daysToAdd = 5; // Sun to next Fri
-    } else {
-      daysToAdd = 5 - todayDay;
-    }
-
-    for (let i = 0; i <= daysToAdd; i++) {
+    // Always show a rolling 7-day window (today + 6 more days = 7 dates).
+    // On Friday this naturally includes next week's dates.
+    for (let i = 0; i <= 6; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       dates.push(d);
@@ -265,6 +258,12 @@ const Booking = () => {
 
   const next7Days = getNext7Days();
   const getTodayDateStr = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  // Calendar picker allows up to 2 weeks ahead
+  const maxCalendarDate = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 13);
+    return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  })();
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] font-sans">
@@ -353,20 +352,23 @@ const Booking = () => {
                   </button>
                 );
               })}
-              <button
-                onClick={() => dateInputRef.current?.showPicker()}
-                className="flex-shrink-0 flex items-center justify-center min-w-[48px] rounded-xl bg-white border border-gray-200 text-gray-400 hover:border-gray-300"
+              {/* Calendar date picker — styled as a button, works on all iOS */}
+              <label
+                className="flex-shrink-0 flex items-center justify-center min-w-[48px] rounded-xl bg-white border border-gray-200 text-gray-400 hover:border-gray-300 cursor-pointer relative overflow-hidden"
+                title="Pick a date up to 2 weeks ahead"
               >
-                <CalendarIcon className="w-4 h-4" />
-              </button>
-              <input
-                type="date"
-                ref={dateInputRef}
-                min={getTodayDateStr()}
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="absolute opacity-0 w-0 h-0 pointer-events-none"
-              />
+                <CalendarIcon className="w-4 h-4 pointer-events-none" />
+                <input
+                  type="date"
+                  ref={dateInputRef}
+                  min={getTodayDateStr()}
+                  max={maxCalendarDate}
+                  value={date}
+                  onChange={(e) => { if (e.target.value && e.target.value <= maxCalendarDate) setDate(e.target.value); }}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  style={{ fontSize: '16px' }}
+                />
+              </label>
             </div>
           </div>
 
@@ -410,6 +412,7 @@ const Booking = () => {
                       const isSel = selectedSlots.some(s => s.slotId === slot.id);
                       const isNight = slot.startHour >= 18 || slot.startHour < 6;
                       const [startTime, endTime] = formatTime12Hour(slot.time).split(' - ');
+                      const has7sSpot = sport === 'football-7s' && slot.available && (slot.bookingCount || 0) >= 1 && (slot.maxBookings || 1) === 2;
                       return (
                         <button
                           key={slot.id}
@@ -432,10 +435,14 @@ const Booking = () => {
                                 {startTime} – {endTime}
                               </div>
                               {!slot.available && <div className="text-xs text-red-400 font-medium">{slot.unavailableReason === 'Booking opens Friday' ? slot.unavailableReason : (slot.unavailableReason === 'Tournament' || slot.unavailableReason === 'Camp') ? slot.unavailableReason : slot.unavailableReason?.startsWith('Maintenance') ? 'Maintenance' : 'Booked'}</div>}
+                              {has7sSpot && <div className="text-xs text-orange-500 font-semibold">1 spot left</div>}
                             </div>
                           </div>
                           <div className="flex items-center gap-2.5">
                             <span className={`font-bold text-sm ${isSel ? 'text-[#65a30d]' : 'text-gray-700'}`}>₹{slot.price.toLocaleString()}</span>
+                            {has7sSpot && !isSel && (
+                              <span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[10px] font-bold rounded-full">½</span>
+                            )}
                             {isSel && (
                               <div className="w-6 h-6 bg-[#84cc16] rounded-full flex items-center justify-center">
                                 <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />

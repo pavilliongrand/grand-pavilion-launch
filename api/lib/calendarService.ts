@@ -9,6 +9,10 @@ export interface OccupiedSlotInfo {
   slotId: string;
   reason: string;
   blocked: boolean;
+  /** How many bookings exist on this slot (relevant for 7s half-ground sharing) */
+  bookingCount: number;
+  /** The sport of the actual booking event (needed for 7s logic) */
+  bookingSport?: string;
 }
 
 // Initialize Google Calendar client with Service Account
@@ -25,15 +29,25 @@ function getCalendarClient() {
 }
 
 /**
- * Get occupied slot IDs for a specific date and sport
+ * Get occupied slot IDs for a specific date and sport.
+ * For football-7s, a slot is only considered occupied when bookingCount >= 2.
  */
 export async function getOccupiedSlotsFromCalendar(date: string, sport: string): Promise<string[]> {
   const occupiedDetails = await getOccupiedSlotDetailsFromCalendar(date, sport);
-  return occupiedDetails.map((slot) => slot.slotId);
+  return occupiedDetails
+    .filter((slot) => {
+      // For football-7s, only truly occupied when 2+ bookings exist
+      if (sport === 'football-7s' && !slot.blocked && slot.bookingSport === 'football-7s') {
+        return slot.bookingCount >= 2;
+      }
+      return true;
+    })
+    .map((slot) => slot.slotId);
 }
 
 /**
- * Get occupied slot IDs and display reasons for a specific date and sport
+ * Get occupied slot IDs and display reasons for a specific date and sport.
+ * Counts bookings per slot so the frontend can show "1 spot left" for 7s.
  */
 export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: string): Promise<OccupiedSlotInfo[]> {
   try {
@@ -53,9 +67,6 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
 
     const events = response.data.items || [];
     
-    // Filter by sport and extract slot IDs (including blocked slots)
-    const occupiedSlots: OccupiedSlotInfo[] = [];
-
     // Returns true if a block event for `blockSport` should affect `requestedSport`.
     // Legacy 'football' blocks all football variants; specific variants only block themselves.
     const sportMatchesBlock = (requestedSport: string, blockSport: string): boolean => {
@@ -63,6 +74,32 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
       if (blockSport === 'football' && requestedSport.startsWith('football')) return true;
       return false;
     };
+
+    // Count bookings per slotId to support 7s half-ground double-booking.
+    // Key: slotId, Value: { count of 7s bookings, count of other bookings }
+    const slotBookingCounts = new Map<string, { total: number; football7s: number; otherSport: boolean }>();
+    
+    // First pass: count bookings per slot
+    events.forEach((event: any) => {
+      const eventSport = event.extendedProperties?.private?.sport;
+      const slotId = event.extendedProperties?.private?.slotId;
+      const isBlocked = event.extendedProperties?.private?.blocked === 'true';
+      
+      if (slotId && !isBlocked) {
+        const existing = slotBookingCounts.get(slotId) || { total: 0, football7s: 0, otherSport: false };
+        existing.total++;
+        if (eventSport === 'football-7s') {
+          existing.football7s++;
+        } else {
+          existing.otherSport = true;
+        }
+        slotBookingCounts.set(slotId, existing);
+      }
+    });
+
+    // Second pass: build occupied slots list with booking counts
+    const occupiedSlots: OccupiedSlotInfo[] = [];
+    const processedSlots = new Set<string>();
     
     events.forEach((event: any) => {
       const eventSport = event.extendedProperties?.private?.sport;
@@ -73,12 +110,22 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
       
       if (slotId) {
         if (!isBlocked) {
-          // Real booking: blocks the ground for ALL sports
-          let displayReason = 'Booked';
-          if (reason === 'Tournament' || reason === 'Camp') {
-            displayReason = reason;
+          // Avoid duplicate entries for the same slot — use counts instead
+          if (!processedSlots.has(slotId)) {
+            processedSlots.add(slotId);
+            const counts = slotBookingCounts.get(slotId) || { total: 0, football7s: 0, otherSport: false };
+            let displayReason = 'Booked';
+            if (reason === 'Tournament' || reason === 'Camp') {
+              displayReason = reason;
+            }
+            occupiedSlots.push({
+              slotId,
+              reason: displayReason,
+              blocked: false,
+              bookingCount: counts.total,
+              bookingSport: eventSport,
+            });
           }
-          occupiedSlots.push({ slotId, reason: displayReason, blocked: false });
         } else {
           // Admin block: only blocks the specific sport (or all football if legacy 'football')
           if (sportMatchesBlock(sport, eventSport || '')) {
@@ -86,6 +133,8 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
               slotId,
               reason: customerName ? `${reason}: ${customerName}` : reason,
               blocked: true,
+              bookingCount: 1,
+              bookingSport: eventSport,
             });
           }
         }
