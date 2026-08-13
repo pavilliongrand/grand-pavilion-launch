@@ -51,7 +51,7 @@ Push to `main` — Vercel auto-deploys. Set all env vars in Vercel Dashboard →
 
 - View all upcoming bookings
 - Block/unblock individual slots or full days
-- Configure day/night pricing per sport
+- Configure day night pricing per sport
 - Toggle sport availability
 
 ## Sports
