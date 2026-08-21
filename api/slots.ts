@@ -21,13 +21,13 @@ interface TimeSlot {
 
 const QuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  sport: z.enum(['cricket', 'football-7s', 'football-11s']),
+  sport: z.enum(['cricket', 'football-7s', 'football-11s', 'football-5s']),
 });
 
 /**
  * API Route: /api/slots
  * Fetch available time slots for a given date and sport.
- * Query params: date (YYYY-MM-DD), sport (cricket|football-7s|football-11s)
+ * Query params: date (YYYY-MM-DD), sport (cricket|football-7s|football-11s|football-5s)
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   applyCors(res, 'GET,OPTIONS');
@@ -62,14 +62,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sportEnabled2 = sportAvailability['football7s_2'] ?? sportAvailability['football'] ?? true;
 
     const is7s = sport === 'football-7s';
-    const maxBookingsForSport = is7s ? ((sportEnabled1 ? 1 : 0) + (sportEnabled2 ? 1 : 0)) : 1;
+    const is5s = sport === 'football-5s';
+    const isFootball = is7s || is5s;
+    // Football (5s/7s) share 2 fields. Cricket/11s use the full ground (1 booking max).
+    const maxBookingsForSport = isFootball ? 2 : 1;
 
     // Check availability per specific football variant, with backward-compat fallback to legacy 'football' key
-    const sportKey = sport === 'cricket' ? 'cricket' : sport === 'football-11s' ? 'football11s' : 'football7s';
-    const sportEnabled = is7s ? (maxBookingsForSport > 0) : (sportAvailability[sportKey] ?? sportAvailability['football'] ?? true);
+    const sportKey = sport === 'cricket' ? 'cricket' : sport === 'football-11s' ? 'football11s' : sport === 'football-5s' ? 'football5s' : 'football7s';
+    const sportEnabled = (is7s || is5s) ? (maxBookingsForSport > 0) : (sportAvailability[sportKey] ?? sportAvailability['football'] ?? true);
     
     if (!sportEnabled) {
-      const sportLabel = sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football 7s' : 'Football 11s';
+      const sportLabel = sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football 7s' : sport === 'football-5s' ? 'Football 5s' : 'Football 11s';
       return res.status(400).json({
         error: `${sportLabel} bookings are currently disabled.`,
         disabled: true,
@@ -83,8 +86,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const occupiedBySlotId = new Map(occupiedSlots.map((slot) => [slot.slotId, slot]));
 
     // Mark occupied slots as unavailable
-    // For football-7s: a slot is available if bookingCount < 2 (half-ground sharing)
-    // For cricket / football-11s: any booking on the slot (regardless of sport) blocks it
+    // Football (5s/7s): share 2 fields. Each booking (5s or 7s) uses one field.
+    //   5s+5s NOT allowed (one goalpost). 5s+7s and 7s+7s ARE allowed.
+    // Cricket / 11s: uses full ground — any existing booking blocks the slot.
     const availableSlots = slots.map((slot) => {
       const occupied = occupiedBySlotId.get(slot.id);
       if (!occupied) {
@@ -106,19 +110,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
       }
 
-      // For football-7s: allow up to maxBookingsForSport bookings on the same slot
-      if (sport === 'football-7s' && occupied.bookingSport === 'football-7s') {
-        const isStillAvailable = slot.available && occupied.bookingCount < maxBookingsForSport;
+      // Cricket / 11s: any existing booking on the slot fully blocks it
+      // (including otherSport flag — cricket/11s use the whole ground)
+      if (occupied.otherSport) {
         return {
           ...slot,
-          available: isStillAvailable,
-          unavailableReason: isStillAvailable ? undefined : 'Booked',
+          available: false,
+          unavailableReason: occupied.reason,
           bookingCount: occupied.bookingCount,
           maxBookings: maxBookingsForSport,
         };
       }
 
-      // Cricket / 11s or any non-7s booking: fully blocks the slot
+      // For football (5s/7s): check field availability
+      if (isFootball) {
+        const totalFieldBookings = (occupied.football5sCount || 0) + (occupied.football7sCount || 0);
+        const freeFields = Math.max(0, maxBookingsForSport - totalFieldBookings);
+
+        if (is7s) {
+          // 7s available if there's at least one free field
+          const isStillAvailable = slot.available && freeFields > 0;
+          return {
+            ...slot,
+            available: isStillAvailable,
+            unavailableReason: isStillAvailable ? undefined : 'Booked',
+            bookingCount: totalFieldBookings,
+            maxBookings: maxBookingsForSport,
+          };
+        }
+
+        // 5s available if: (1) no existing 5s (one goalpost), AND (2) a free field exists
+        const has5s = (occupied.football5sCount || 0) >= 1;
+        const isStillAvailable = slot.available && !has5s && freeFields > 0;
+        return {
+          ...slot,
+          available: isStillAvailable,
+          unavailableReason: isStillAvailable ? undefined : (has5s ? '5s already booked' : 'All fields booked'),
+          bookingCount: totalFieldBookings,
+          maxBookings: maxBookingsForSport,
+        };
+      }
+
+      // Cricket / 11s: any booking on the slot (regardless of sport) blocks it
       return {
         ...slot,
         available: false,
@@ -136,7 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 function generateSlots(
-  sport: 'cricket' | 'football-7s' | 'football-11s',
+  sport: 'cricket' | 'football-7s' | 'football-11s' | 'football-5s',
   pricingData: any,
   targetDateStr: string
 ): TimeSlot[] {
@@ -179,6 +212,8 @@ function generateSlots(
       price = isNight ? rates.cricketNight : rates.cricketDay;
     } else if (sport === 'football-11s') {
       price = isNight ? rates.football11sNight : rates.football11sDay;
+    } else if (sport === 'football-5s') {
+      price = isNight ? rates.football5sNight : rates.football5sDay;
     } else {
       price = isNight ? rates.football7sNight : rates.football7sDay;
     }

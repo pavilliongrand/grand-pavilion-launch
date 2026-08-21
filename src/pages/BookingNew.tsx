@@ -52,11 +52,11 @@ const Booking = () => {
   // Read ?sport= query param to pre-select sport (e.g. from Services page)
   const initialSport = (() => {
     const sp = searchParams.get('sport');
-    if (sp === 'football-7s' || sp === 'football-11s') return sp;
+    if (sp === 'football-7s' || sp === 'football-11s' || sp === 'football-5s') return sp;
     if (sp === 'football') return 'football-7s' as const;
     return 'cricket' as const;
   })();
-  const [sport, setSport] = useState<"cricket" | "football-7s" | "football-11s">(initialSport);
+  const [sport, setSport] = useState<"cricket" | "football-7s" | "football-11s" | "football-5s">(initialSport);
   // Use IST date for initial value — toISOString() gives UTC which is wrong for users after midnight IST
   const [date, setDate] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }));
   const [selectedSlots, setSelectedSlots] = useState<Array<{slotId: string}>>([]);
@@ -65,7 +65,7 @@ const Booking = () => {
   const [otp, setOtp] = useState("");
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [showAllSlots, setShowAllSlots] = useState(false);
-  const [pricing, setPricing] = useState<{ rates?: { cricketDay: number; cricketNight: number; football7sDay: number; football7sNight: number; football11sDay: number; football11sNight: number }; dayNightCutoffHour?: number } | null>(null);
+  const [pricing, setPricing] = useState<{ rates?: { cricketDay: number; cricketNight: number; football7sDay: number; football7sNight: number; football11sDay: number; football11sNight: number; football5sDay: number; football5sNight: number }; dayNightCutoffHour?: number } | null>(null);
   
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -99,6 +99,7 @@ const Booking = () => {
     if (sportVal === 'cricket') return { day: r.cricketDay, night: r.cricketNight };
     if (sportVal === 'football-7s') return { day: r.football7sDay, night: r.football7sNight };
     if (sportVal === 'football-11s') return { day: r.football11sDay, night: r.football11sNight };
+    if (sportVal === 'football-5s') return { day: r.football5sDay, night: r.football5sNight };
     return null;
   };
 
@@ -298,6 +299,7 @@ const Booking = () => {
                 { value: "cricket", label: "Cricket", emoji: "🏏" },
                 { value: "football-7s", label: "Football (7s)", emoji: "⚽" },
                 { value: "football-11s", label: "Football (11s)", emoji: "⚽" },
+                { value: "football-5s", label: "Football (5s)", emoji: "⚽" },
               ].map(s => {
                 const priceRange = getSportPriceRange(s.value);
                 const isSel = sport === s.value;
@@ -560,7 +562,7 @@ const Booking = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Sport</span>
-                    <span className="font-semibold text-gray-900">{sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football (7s)' : 'Football (11s)'}</span>
+                    <span className="font-semibold text-gray-900">{sport === 'cricket' ? 'Cricket' : sport === 'football-7s' ? 'Football (7s)' : sport === 'football-5s' ? 'Football (5s)' : 'Football (11s)'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Date</span>

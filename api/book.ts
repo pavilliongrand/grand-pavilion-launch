@@ -12,7 +12,7 @@ const SlotSchema = z.object({
 
 const BookingSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  sport: z.enum(['cricket', 'football-7s', 'football-11s']),
+  sport: z.enum(['cricket', 'football-7s', 'football-11s', 'football-5s']),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
   slots: z.array(SlotSchema).min(1, 'At least one slot required').max(5, 'Maximum 5 slots per booking'),
   phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits'),
@@ -30,6 +30,7 @@ function calculateServerPrice(
     cricketDay: 1600, cricketNight: 1600,
     football7sDay: 1600, football7sNight: 1600,
     football11sDay: 2200, football11sNight: 2200,
+    football5sDay: 1600, football5sNight: 1600,
   };
   const cutoff: number = pricingData?.dayNightCutoffHour ?? 18;
 
@@ -42,6 +43,8 @@ function calculateServerPrice(
       total += isNight ? rates.cricketNight : rates.cricketDay;
     } else if (sport === 'football-11s') {
       total += isNight ? rates.football11sNight : rates.football11sDay;
+    } else if (sport === 'football-5s') {
+      total += isNight ? rates.football5sNight : rates.football5sDay;
     } else {
       total += isNight ? rates.football7sNight : rates.football7sDay;
     }
@@ -117,13 +120,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const sportEnabled1 = sportAvailability['football7s'] ?? sportAvailability['football'] ?? true;
     const sportEnabled2 = sportAvailability['football7s_2'] ?? sportAvailability['football'] ?? true;
     const is7s = payload.sport === 'football-7s';
-    const maxBookingsFor7s = is7s ? ((sportEnabled1 ? 1 : 0) + (sportEnabled2 ? 1 : 0)) : 1;
+    const is5s = payload.sport === 'football-5s';
+    const isFootball = is7s || is5s;
+    const maxBookingsForSport = isFootball ? 2 : 1;
 
-    const sportKey = payload.sport === 'cricket' ? 'cricket' : payload.sport === 'football-11s' ? 'football11s' : 'football7s';
-    const sportEnabled = is7s ? (maxBookingsFor7s > 0) : (sportAvailability[sportKey] ?? sportAvailability['football'] ?? true);
+    const sportKey = payload.sport === 'cricket' ? 'cricket' : payload.sport === 'football-11s' ? 'football11s' : payload.sport === 'football-5s' ? 'football5s' : 'football7s';
+    const sportEnabled = isFootball ? (maxBookingsForSport > 0) : (sportAvailability[sportKey] ?? sportAvailability['football'] ?? true);
     
     if (!sportEnabled) {
-      const sportLabel = payload.sport === 'cricket' ? 'Cricket' : payload.sport === 'football-7s' ? 'Football 7s' : 'Football 11s';
+      const sportLabel = payload.sport === 'cricket' ? 'Cricket' : payload.sport === 'football-7s' ? 'Football 7s' : payload.sport === 'football-5s' ? 'Football 5s' : 'Football 11s';
       return res.status(400).json({
         error: `${sportLabel} bookings are currently disabled.`,
       });
@@ -137,21 +142,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
 
     // ── 6. Double-booking prevention (occupiedSlotDetails already fetched above) ──────
-    // For football-7s: allow up to maxBookingsFor7s bookings per slot (half-ground sharing)
-    // For cricket / football-11s: any existing booking blocks the slot
+    // Football (5s/7s): share 2 fields. Each booking uses one field.
+    //   5s+5s NOT allowed (one goalpost). 5s+7s and 7s+7s ARE allowed.
+    // Cricket / 11s: uses full ground — any existing booking blocks the slot.
     const occupiedBySlotId = new Map(occupiedSlotDetails.map((s) => [s.slotId, s]));
     for (const slot of payload.slots) {
       const occupied = occupiedBySlotId.get(slot.slotId);
       if (occupied) {
-        if (payload.sport === 'football-7s' && !occupied.blocked && occupied.bookingSport === 'football-7s') {
-          // 7s half-ground: allow if fewer than maxBookings
-          if (occupied.bookingCount >= maxBookingsFor7s) {
-            return res.status(409).json({
-              error: 'Both 7-a-side spots for this slot are taken. Please select a different time.',
-            });
+        if (occupied.blocked) {
+          return res.status(409).json({
+            error: 'This slot just got booked. Please refresh and select a different time.',
+          });
+        }
+        // Cricket / 11s use the full ground — any existing booking blocks it
+        if (occupied.otherSport) {
+          return res.status(409).json({
+            error: 'This slot just got booked. Please refresh and select a different time.',
+          });
+        }
+        if (isFootball) {
+          const totalFieldBookings = (occupied.football5sCount || 0) + (occupied.football7sCount || 0);
+          const freeFields = Math.max(0, maxBookingsForSport - totalFieldBookings);
+          if (is7s) {
+            // 7s available if there's a free field
+            if (freeFields <= 0) {
+              return res.status(409).json({
+                error: 'Both fields are booked for this slot. Please select a different time.',
+              });
+            }
+          } else if (is5s) {
+            // 5s: no existing 5s (one goalpost) AND a free field exists
+            const has5s = (occupied.football5sCount || 0) >= 1;
+            if (has5s || freeFields <= 0) {
+              return res.status(409).json({
+                error: has5s ? 'The 5-a-side pitch is already booked for this slot.' : 'Both fields are booked for this slot. Please select a different time.',
+              });
+            }
           }
         } else {
-          // Cricket, 11s, or admin block: no double booking
+          // Cricket, 11s: no double booking
           return res.status(409).json({
             error: 'This slot just got booked. Please refresh and select a different time.',
           });
