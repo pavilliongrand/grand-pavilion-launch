@@ -17,6 +17,8 @@ export interface OccupiedSlotInfo {
   football5sCount?: number;
   /** Number of football-7s bookings on this slot */
   football7sCount?: number;
+  /** Whether a non-football booking (cricket/11s) exists on this slot */
+  otherSport?: boolean;
 }
 
 // Initialize Google Calendar client with Service Account
@@ -132,6 +134,7 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
               bookingSport: eventSport,
               football5sCount: counts.football5s,
               football7sCount: counts.football7s,
+              otherSport: counts.otherSport,
             });
           }
         } else {
