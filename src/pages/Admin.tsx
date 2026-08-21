@@ -262,7 +262,7 @@ const Admin = () => {
   const fetchBlockedSlots = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/blocked-slots', { headers: adminHeaders() });
+      const response = await fetch('/api/admin/slots', { headers: adminHeaders() });
       if (response.status === 401) { handleLogout(); return; }
       const data = await response.json();
       setBlockedSlots(data.blockedSlots || []);
@@ -310,7 +310,7 @@ const Admin = () => {
         const blockEvent = blockedSlots.find(b => b.date === blockDate && b.sport === sport && b.slotIds.includes(slotId));
         if (blockEvent) {
           setBlockedSlots(prev => prev.filter(b => b.id !== blockEvent.id));
-          const response = await fetch('/api/admin/unblock-slots', {
+          const response = await fetch('/api/admin/slots', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json', ...adminHeaders() },
             body: JSON.stringify({ eventId: blockEvent.id })
@@ -318,7 +318,7 @@ const Admin = () => {
           if (!response.ok) throw new Error('Failed to unblock slot');
         }
       } else {
-        const response = await fetch('/api/admin/block-slots', {
+        const response = await fetch('/api/admin/slots', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...adminHeaders() },
           body: JSON.stringify({ sport, date: blockDate, slotIds: [slotId], reason: blockReason, customerName: blockCustomerName, customerPhone: blockCustomerPhone })
@@ -338,7 +338,7 @@ const Admin = () => {
   const createAdminBooking = async (sport: 'cricket' | 'football-7s' | 'football-11s' | 'football-5s' | 'football', slotIds: string[]) => {
     setSaving(true);
     try {
-      const response = await fetch('/api/admin/block-slots', {
+      const response = await fetch('/api/admin/slots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify({ sport, date: adminBookingDate, slotIds, reason: adminBookingReason, customerName: adminBookingCustomerName, customerPhone: adminBookingCustomerPhone, isBooking: true, amount: adminBookingAmount ? Number(adminBookingAmount) : undefined })
@@ -358,7 +358,7 @@ const Admin = () => {
     if (!confirm('Are you sure you want to unblock these slots?')) return;
 
     try {
-      const response = await fetch('/api/admin/unblock-slots', {
+      const response = await fetch('/api/admin/slots', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', ...adminHeaders() },
         body: JSON.stringify({ eventId })
