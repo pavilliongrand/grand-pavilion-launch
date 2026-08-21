@@ -11,8 +11,12 @@ export interface OccupiedSlotInfo {
   blocked: boolean;
   /** How many bookings exist on this slot (relevant for 7s half-ground sharing) */
   bookingCount: number;
-  /** The sport of the actual booking event (needed for 7s logic) */
+  /** The sport of the actual booking event (needed for 7s/5s logic) */
   bookingSport?: string;
+  /** Number of football-5s bookings on this slot */
+  football5sCount?: number;
+  /** Number of football-7s bookings on this slot */
+  football7sCount?: number;
 }
 
 // Initialize Google Calendar client with Service Account
@@ -76,8 +80,8 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
     };
 
     // Count bookings per slotId to support 7s half-ground double-booking.
-    // Key: slotId, Value: { count of 7s bookings, count of other bookings }
-    const slotBookingCounts = new Map<string, { total: number; football7s: number; otherSport: boolean }>();
+    // Key: slotId, Value: { count of bookings by sport type }
+    const slotBookingCounts = new Map<string, { total: number; football7s: number; football5s: number; otherSport: boolean }>();
     
     // First pass: count bookings per slot
     events.forEach((event: any) => {
@@ -86,10 +90,12 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
       const isBlocked = event.extendedProperties?.private?.blocked === 'true';
       
       if (slotId && !isBlocked) {
-        const existing = slotBookingCounts.get(slotId) || { total: 0, football7s: 0, otherSport: false };
+        const existing = slotBookingCounts.get(slotId) || { total: 0, football7s: 0, football5s: 0, otherSport: false };
         existing.total++;
         if (eventSport === 'football-7s') {
           existing.football7s++;
+        } else if (eventSport === 'football-5s') {
+          existing.football5s++;
         } else {
           existing.otherSport = true;
         }
@@ -113,7 +119,7 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
           // Avoid duplicate entries for the same slot — use counts instead
           if (!processedSlots.has(slotId)) {
             processedSlots.add(slotId);
-            const counts = slotBookingCounts.get(slotId) || { total: 0, football7s: 0, otherSport: false };
+            const counts = slotBookingCounts.get(slotId) || { total: 0, football7s: 0, football5s: 0, otherSport: false };
             let displayReason = 'Booked';
             if (reason === 'Tournament' || reason === 'Camp') {
               displayReason = reason;
@@ -124,6 +130,8 @@ export async function getOccupiedSlotDetailsFromCalendar(date: string, sport: st
               blocked: false,
               bookingCount: counts.total,
               bookingSport: eventSport,
+              football5sCount: counts.football5s,
+              football7sCount: counts.football7s,
             });
           }
         } else {

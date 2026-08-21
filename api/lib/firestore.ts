@@ -19,7 +19,7 @@ const db = getFirestore();
 
 const DEFAULT_PRICING = {
   workingHours: { start: 0, end: 24 },
-  sportAvailability: { cricket: true, football7s: true, football11s: true },
+  sportAvailability: { cricket: true, football7s: true, football11s: true, football5s: true },
   dayNightCutoffHour: 18,
   rates: {
     cricketDay: 1000,
@@ -28,6 +28,8 @@ const DEFAULT_PRICING = {
     football7sNight: 1600,
     football11sDay: 1000,
     football11sNight: 1600,
+    football5sDay: 1000,
+    football5sNight: 1600,
   },
   lastUpdated: new Date().toISOString(),
 };
@@ -54,14 +56,16 @@ export async function savePricingConfig(data: {
     football7sNight: number;
     football11sDay: number;
     football11sNight: number;
+    football5sDay: number;
+    football5sNight: number;
   };
   dayNightCutoffHour?: number;
   workingHours?: { start: number; end: number };
-  sportAvailability?: { cricket: boolean; football7s: boolean; football11s: boolean };
+  sportAvailability?: { cricket: boolean; football7s: boolean; football11s: boolean; football5s: boolean };
 }) {
   const pricingData = {
     workingHours: data.workingHours || { start: 0, end: 24 },
-    sportAvailability: data.sportAvailability || { cricket: true, football7s: true, football11s: true },
+    sportAvailability: data.sportAvailability || { cricket: true, football7s: true, football11s: true, football5s: true },
     dayNightCutoffHour: data.dayNightCutoffHour ?? 18,
     rates: data.rates,
     lastUpdated: new Date().toISOString(),

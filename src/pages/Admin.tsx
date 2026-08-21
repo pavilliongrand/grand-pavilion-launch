@@ -6,7 +6,6 @@ import {
   Calendar, 
   IndianRupee, 
   Clock, 
-  TrendingUp, 
   Settings,
   Save,
   Trash2,
@@ -93,7 +92,7 @@ const Admin = () => {
     }
     return false;
   });
-  const [activeTab, setActiveTab] = useState<"bookings" | "pricing" | "slots" | "analytics">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "pricing" | "slots">("bookings");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,6 +110,7 @@ const Admin = () => {
   const [adminBookingCustomerName, setAdminBookingCustomerName] = useState("");
   const [adminBookingCustomerPhone, setAdminBookingCustomerPhone] = useState("");
   const [adminBookingAmount, setAdminBookingAmount] = useState("");
+  const [adminBookingSport, setAdminBookingSport] = useState("cricket");
   const [tournamentStartHour, setTournamentStartHour] = useState(9);
   const [tournamentEndHour, setTournamentEndHour] = useState(21);
   const [tournamentSport, setTournamentSport] = useState<'cricket' | 'football'>('cricket');
@@ -466,32 +466,7 @@ const Admin = () => {
     setIsAuthenticated(false);
   };
 
-  const getTotalRevenue = () => {
-    return bookings
-      .filter(b => b.status === 'confirmed')
-      .reduce((sum, b) => sum + b.amount, 0);
-  };
 
-  const getBookingsByDate = () => {
-    const grouped: { [key: string]: number } = {};
-    bookings.forEach(b => {
-      grouped[b.date] = (grouped[b.date] || 0) + 1;
-    });
-    return grouped;
-  };
-
-  const getPopularHours = () => {
-    const hourCounts: { [hour: string]: number } = {};
-    bookings.forEach(b => {
-      b.slotTimes.forEach(slot => {
-        const hour = slot.split(' - ')[0];
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      });
-    });
-    return Object.entries(hourCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  };
 
   const getTodayDate = () => new Date().toISOString().split('T')[0];
 
@@ -603,46 +578,7 @@ const Admin = () => {
       </header>
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-4 sm:mb-8">
-          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-[#84cc16]/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                <IndianRupee className="w-4 h-4 sm:w-6 sm:h-6 text-[#65a30d]" />
-              </div>
-              <div>
-                <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Revenue</div>
-                <div className="text-sm sm:text-2xl font-bold text-gray-900">₹{getTotalRevenue().toLocaleString()}</div>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-blue-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Bookings</div>
-                <div className="text-sm sm:text-2xl font-bold text-gray-900">{groupedBookings.length}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 text-center sm:text-left">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-green-500/20 rounded-lg sm:rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-green-600" />
-              </div>
-              <div>
-                <div className="text-[10px] sm:text-sm text-gray-500 mb-0.5">Confirmed</div>
-                <div className="text-sm sm:text-2xl font-bold text-gray-900">
-                  {groupedBookings.filter(b => b.status === 'confirmed').length}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Tabs */}
         <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-8 bg-white shadow-sm p-1.5 sm:p-2 rounded-xl border border-gray-200 overflow-x-auto w-full">
@@ -650,7 +586,6 @@ const Admin = () => {
             { id: "bookings", label: "Bookings", icon: Calendar },
             { id: "pricing", label: "Pricing", icon: IndianRupee },
             { id: "slots", label: "Slots", icon: Lock },
-            { id: "analytics", label: "Stats", icon: TrendingUp }
           ].map(tab => (
             <button
               key={tab.id}
@@ -719,6 +654,19 @@ const Admin = () => {
                     placeholder="E.g. 9876543210"
                     className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Sport</label>
+                  <select
+                    value={adminBookingSport}
+                    onChange={(e) => setAdminBookingSport(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
+                  >
+                    <option value="cricket">Cricket</option>
+                    <option value="football-7s">Football 7s</option>
+                    <option value="football-11s">Football 11s</option>
+                    <option value="football-5s">Football 5s</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-gray-700">Amount (₹)</label>
@@ -814,26 +762,11 @@ const Admin = () => {
               )}
               {adminBookingDate && adminBookingReason === 'Phone Booking' && (
                 <div className="space-y-4">
-                  <div className="flex gap-4 mb-4">
-                    <button
-                      onClick={() => createAdminBooking('cricket', Array.from({ length: 24 }, (_, i) => `${i}-${i+1}`))}
-                      disabled={saving || !adminBookingCustomerName}
-                      className="flex-1 py-3 bg-[#F7FEE7] text-[#65a30d] border border-[#A3E635] hover:bg-[#ecfccb] font-bold rounded-xl transition-all disabled:opacity-50"
-                    >
-                      Book Full Day (Cricket)
-                    </button>
-                    <button
-                      onClick={() => createAdminBooking('football', Array.from({ length: 24 }, (_, i) => `${i}-${i+1}`))}
-                      disabled={saving || !adminBookingCustomerName}
-                      className="flex-1 py-3 bg-[#F7FEE7] text-[#65a30d] border border-[#A3E635] hover:bg-[#ecfccb] font-bold rounded-xl transition-all disabled:opacity-50"
-                    >
-                      Book Full Day (Football)
-                    </button>
-                  </div>
+
                   <div className="flex text-sm font-bold text-gray-500 px-3 mb-2">
                     <div className="w-1/3">Time Slot</div>
-                    <div className="w-1/3 text-center">Book (Cricket)</div>
-                    <div className="w-1/3 text-center">Book (Football)</div>
+                    <div className="w-1/3 text-center">Book</div>
+                    <div className="w-1/3 text-center">Status</div>
                   </div>
                   {Array.from({ length: 24 }, (_, i) => i).map(hour => {
                     const slotId = `${hour}-${hour+1}`;
@@ -853,7 +786,7 @@ const Admin = () => {
                         
                         <div className="w-1/3 flex justify-center">
                           <button 
-                            onClick={() => createAdminBooking('cricket', [slotId])}
+                            onClick={() => createAdminBooking(adminBookingSport as any, [slotId])}
                             disabled={!adminBookingCustomerName}
                             className={`px-3 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50`}
                           >
@@ -862,13 +795,7 @@ const Admin = () => {
                         </div>
 
                         <div className="w-1/3 flex justify-center">
-                          <button 
-                            onClick={() => createAdminBooking('football', [slotId])}
-                            disabled={!adminBookingCustomerName}
-                            className={`px-3 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50`}
-                          >
-                            Book
-                          </button>
+                          <span className="text-[10px] text-gray-400">{isBooked ? 'Booked' : 'Free'}</span>
                         </div>
                       </div>
                     );
@@ -1585,108 +1512,6 @@ const Admin = () => {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Analytics Tab */}
-        {activeTab === "analytics" && (
-          <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">Booking Analytics</h2>
-            
-            <div className="space-y-6">
-              {/* Revenue & Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-6 bg-green-50 border border-green-200 rounded-xl">
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                    <IndianRupee className="w-4 h-4 text-green-600" />
-                    Total Revenue
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">₹{getTotalRevenue().toLocaleString()}</div>
-                </div>
-
-                <div className="p-6 bg-purple-50 border border-purple-200 rounded-xl">
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                    <Calendar className="w-4 h-4 text-purple-600" />
-                    Total Bookings
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">{bookings.length}</div>
-                </div>
-
-                <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl">
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    Avg Booking Value
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    ₹{bookings.length > 0 ? Math.round(getTotalRevenue() / bookings.length).toLocaleString() : 0}
-                  </div>
-                </div>
-              </div>
-
-              {/* Sport Distribution */}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                  <div className="text-sm text-gray-500 mb-2">Cricket Bookings</div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    {bookings.filter(b => b.sport === 'cricket').length}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    ₹{bookings.filter(b => b.sport === 'cricket').reduce((sum, b) => sum + b.amount, 0).toLocaleString()} revenue
-                  </div>
-                </div>
-
-                <div className="p-6 bg-gray-50 border border-gray-200 rounded-xl">
-                  <div className="text-sm text-gray-500 mb-2">Football Bookings</div>
-                  <div className="text-3xl font-bold text-gray-900">
-                    {bookings.filter(b => b.sport.startsWith('football')).length}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    ₹{bookings.filter(b => b.sport.startsWith('football')).reduce((sum, b) => sum + b.amount, 0).toLocaleString()} revenue
-                  </div>
-                </div>
-              </div>
-
-              {/* Popular Hours */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900">Most Popular Time Slots</h3>
-                <div className="space-y-2">
-                  {getPopularHours().length === 0 ? (
-                    <p className="text-gray-500">No booking data available</p>
-                  ) : (
-                    getPopularHours().map(([hour, count], index) => (
-                      <div key={hour} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <span className="text-[#84cc16] font-bold">#{index + 1}</span>
-                          <Clock className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium text-gray-900">{hour}</span>
-                        </div>
-                        <span className="text-[#65a30d] font-bold">{count} bookings</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Bookings by Date */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900">Bookings by Date</h3>
-                <div className="space-y-2">
-                  {Object.entries(getBookingsByDate()).length === 0 ? (
-                    <p className="text-gray-500">No booking data available</p>
-                  ) : (
-                    Object.entries(getBookingsByDate())
-                      .sort((a, b) => b[0].localeCompare(a[0]))
-                      .slice(0, 7)
-                      .map(([date, count]) => (
-                        <div key={date} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-lg">
-                          <span className="font-medium text-gray-900">{new Date(date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                          <span className="text-[#65a30d] font-bold">{count} bookings</span>
-                        </div>
-                      ))
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         )}

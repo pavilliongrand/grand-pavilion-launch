@@ -8,7 +8,7 @@ const SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
 const PRIVATE_KEY = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
 interface BlockSlotRequest {
-  sport: 'cricket' | 'football' | 'football-7s' | 'football-11s';
+  sport: 'cricket' | 'football' | 'football-7s' | 'football-11s' | 'football-5s';
   date: string;
   slotIds: string[];
   reason: string;
@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             amount: slotAmount,
           },
         },
-        colorId: isBooking ? (sport === 'cricket' ? '9' : '11') : '11',
+        colorId: isBooking ? (sport === 'cricket' ? '9' : sport === 'football-5s' ? '6' : '11') : '11',
       };
 
       const response = await calendar.events.insert({

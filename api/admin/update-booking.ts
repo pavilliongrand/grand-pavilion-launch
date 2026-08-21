@@ -119,7 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             customerPhone,
           },
         },
-        colorId: sport === 'cricket' ? '9' : '11',
+        colorId: sport === 'cricket' ? '9' : sport === 'football-5s' ? '6' : '11',
       };
 
       const response = await calendar.events.insert({
