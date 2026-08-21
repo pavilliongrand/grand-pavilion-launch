@@ -62,6 +62,8 @@ interface Rates {
   football7sNight: number;
   football11sDay: number;
   football11sNight: number;
+  football5sDay: number;
+  football5sNight: number;
 }
 
 interface WorkingHours {
@@ -113,7 +115,7 @@ const Admin = () => {
   const [adminBookingSport, setAdminBookingSport] = useState("cricket");
   const [tournamentStartHour, setTournamentStartHour] = useState(9);
   const [tournamentEndHour, setTournamentEndHour] = useState(21);
-  const [tournamentSport, setTournamentSport] = useState<'cricket' | 'football'>('cricket');
+  const [tournamentSport, setTournamentSport] = useState<'cricket' | 'football-7s' | 'football-11s' | 'football-5s'>('cricket');
   
   // Edit Booking
   const [editingBookingId, setEditingBookingId] = useState<string | null>(null);
@@ -125,11 +127,12 @@ const Admin = () => {
   const [rates, setRates] = useState<Rates>({
     cricketDay: 1600, cricketNight: 1950,
     football7sDay: 1600, football7sNight: 1950,
-    football11sDay: 2200, football11sNight: 2600
+    football11sDay: 2200, football11sNight: 2600,
+    football5sDay: 1200, football5sNight: 1500
   });
   const [dayNightCutoffHour, setDayNightCutoffHour] = useState(18);
   const [workingHours, setWorkingHours] = useState<WorkingHours>({ start: 0, end: 24 });
-  const [sportAvailability, setSportAvailability] = useState({ cricket: true, football7s: true, football7s_2: true, football11s: true });
+  const [sportAvailability, setSportAvailability] = useState({ cricket: true, football7s: true, football7s_2: true, football11s: true, football5s: true });
 
   // Get signed admin token from session for API authentication
   const getAdminToken = () => {
@@ -246,6 +249,7 @@ const Admin = () => {
           football7s: sa.football7s ?? sa.football ?? true,
           football7s_2: sa.football7s_2 ?? sa.football ?? true,
           football11s: sa.football11s ?? sa.football ?? true,
+          football5s: sa.football5s ?? true,
         });
       }
     } catch (err) {
@@ -298,7 +302,7 @@ const Admin = () => {
     }
   };
 
-  const toggleSlotBlock = async (hour: number, sport: 'cricket' | 'football-7s' | 'football-11s', currentlyBlocked: boolean) => {
+  const toggleSlotBlock = async (hour: number, sport: 'cricket' | 'football-7s' | 'football-11s' | 'football-5s', currentlyBlocked: boolean) => {
     const slotId = `${hour}-${hour+1}`;
     setSaving(true);
     try {
@@ -331,28 +335,7 @@ const Admin = () => {
     }
   };
 
-  const blockFullDay = async (sport: 'cricket' | 'football-7s' | 'football-11s') => {
-    if (!blockDate) return;
-    setSaving(true);
-    try {
-      const allSlots = Array.from({ length: 24 }, (_, i) => `${i}-${i+1}`);
-      const response = await fetch('/api/admin/block-slots', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...adminHeaders() },
-        body: JSON.stringify({ sport, date: blockDate, slotIds: allSlots, reason: blockReason, customerName: blockCustomerName, customerPhone: blockCustomerPhone })
-      });
-      if (!response.ok) throw new Error('Failed to block full day');
-      alert(`✅ Full day blocked successfully for ${sport}`);
-      await fetchBlockedSlots();
-    } catch (err: any) {
-      console.error('Full day block error:', err);
-      alert(`Failed to block full day: ${err.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const createAdminBooking = async (sport: 'cricket' | 'football', slotIds: string[]) => {
+  const createAdminBooking = async (sport: 'cricket' | 'football-7s' | 'football-11s' | 'football-5s' | 'football', slotIds: string[]) => {
     setSaving(true);
     try {
       const response = await fetch('/api/admin/block-slots', {
@@ -465,8 +448,6 @@ const Admin = () => {
     localStorage.removeItem('admin_session');
     setIsAuthenticated(false);
   };
-
-
 
   const getTodayDate = () => new Date().toISOString().split('T')[0];
 
@@ -722,11 +703,13 @@ const Admin = () => {
                       <label className="block text-sm font-semibold mb-2 text-gray-700">Sport</label>
                       <select
                         value={tournamentSport}
-                        onChange={(e) => setTournamentSport(e.target.value as 'cricket' | 'football')}
+                        onChange={(e) => setTournamentSport(e.target.value as 'cricket' | 'football-7s' | 'football-11s' | 'football-5s')}
                         className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:border-[#A3E635] focus:ring-1 focus:ring-[#A3E635] focus:outline-none"
                       >
                         <option value="cricket">Cricket</option>
-                        <option value="football">Football</option>
+                        <option value="football-7s">Football 7s</option>
+                        <option value="football-11s">Football 11s</option>
+                        <option value="football-5s">Football 5s</option>
                       </select>
                     </div>
                   </div>
@@ -786,7 +769,7 @@ const Admin = () => {
                         
                         <div className="w-1/3 flex justify-center">
                           <button 
-                            onClick={() => createAdminBooking(adminBookingSport as any, [slotId])}
+                            onClick={() => createAdminBooking(adminBookingSport as 'cricket' | 'football-7s' | 'football-11s' | 'football-5s', [slotId])}
                             disabled={!adminBookingCustomerName}
                             className={`px-3 py-1 text-xs font-semibold rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors disabled:opacity-50`}
                           >
@@ -1013,8 +996,7 @@ const Admin = () => {
                 <Settings className="w-5 h-5 text-green-600" />
                 Sport Availability
               </h3>
-              <p className="text-sm text-gray-600 mb-4">Enable or disable bookings for specific sports</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <p className="text-sm text-gray-600 mb-4">Enable or disable bookings for specific sports</p>                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="p-4 bg-white rounded-xl border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1126,6 +1108,34 @@ const Admin = () => {
                     </span>
                   </div>
                 </div>
+                {/* Football 5s */}
+                <div className="p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-lg mb-1 text-gray-900">Football (5s)</h4>
+                      <p className="text-xs text-gray-500">Allow 5-a-side bookings</p>
+                    </div>
+                    <button
+                      onClick={() => setSportAvailability(prev => ({ ...prev, football5s: !prev.football5s }))}
+                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                        sportAvailability.football5s ? 'bg-green-500' : 'bg-zinc-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                          sportAvailability.football5s ? 'translate-x-7' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="mt-3 text-xs">
+                    <span className={`font-semibold ${
+                      sportAvailability.football5s ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {sportAvailability.football5s ? '✓ Enabled' : '✗ Disabled'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1205,7 +1215,7 @@ const Admin = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Cricket */}
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
                   <h4 className="font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">Cricket</h4>
@@ -1304,6 +1314,39 @@ const Admin = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Football 5s */}
+                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                  <h4 className="font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">Football (5-a-side)</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Day Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.football5sDay}
+                          onChange={(e) => updateRate('football5sDay', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">Night Rate</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          step="50"
+                          value={rates.football5sNight}
+                          onChange={(e) => updateRate('football5sNight', Number(e.target.value))}
+                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#A3E635] focus:ring-1 focus:outline-none transition-all font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1365,34 +1408,13 @@ const Admin = () => {
 
               {blockDate && (
                 <div className="space-y-4">
-                  <div className="flex gap-2 mb-4 flex-wrap">
-                    <button
-                      onClick={() => blockFullDay('cricket')}
-                      disabled={saving}
-                      className="flex-1 min-w-[140px] py-3 bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 font-bold rounded-xl transition-all disabled:opacity-50"
-                    >
-                      Block Full Day (Cricket)
-                    </button>
-                    <button
-                      onClick={() => blockFullDay('football-7s')}
-                      disabled={saving}
-                      className="flex-1 min-w-[140px] py-3 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 font-bold rounded-xl transition-all disabled:opacity-50"
-                    >
-                      Block Full Day (Football 7s)
-                    </button>
-                    <button
-                      onClick={() => blockFullDay('football-11s')}
-                      disabled={saving}
-                      className="flex-1 min-w-[140px] py-3 bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 font-bold rounded-xl transition-all disabled:opacity-50"
-                    >
-                      Block Full Day (Football 11s)
-                    </button>
-                  </div>
-                  <div className="flex text-sm font-bold text-gray-500 px-3 mb-2">
-                    <div className="w-1/4">Time Slot</div>
-                    <div className="w-1/4 text-center">Cricket</div>
-                    <div className="w-1/4 text-center">Football 7s</div>
-                    <div className="w-1/4 text-center">Football 11s</div>
+
+                  <div className="flex text-xs sm:text-sm font-bold text-gray-500 px-3 mb-2">
+                    <div className="w-1/5">Time Slot</div>
+                    <div className="w-1/5 text-center">Cricket</div>
+                    <div className="w-1/5 text-center">Football 7s</div>
+                    <div className="w-1/5 text-center">Football 11s</div>
+                    <div className="w-1/5 text-center">Football 5s</div>
                   </div>
                   {Array.from({ length: 24 }, (_, i) => i).map(hour => {
                     const slotId = `${hour}-${hour+1}`;
@@ -1407,12 +1429,13 @@ const Admin = () => {
                     const isCricketBlocked = blockedSlots.some(b => b.date === blockDate && b.sport === 'cricket' && b.slotIds.includes(slotId));
                     const isFootball7sBlocked = blockedSlots.some(b => b.date === blockDate && (b.sport === 'football-7s' || b.sport === 'football') && b.slotIds.includes(slotId));
                     const isFootball11sBlocked = blockedSlots.some(b => b.date === blockDate && (b.sport === 'football-11s' || b.sport === 'football') && b.slotIds.includes(slotId));
+                    const isFootball5sBlocked = blockedSlots.some(b => b.date === blockDate && b.sport === 'football-5s' && b.slotIds.includes(slotId));
 
                     return (
-                      <div key={hour} className={`flex items-center p-3 rounded-xl border transition-colors ${saving ? 'opacity-50 pointer-events-none' : ''} ${isCricketBlocked && isFootball7sBlocked && isFootball11sBlocked ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-200'}`}>
-                        <div className="w-1/4 font-semibold text-xs sm:text-sm text-gray-900">{time}</div>
+                      <div key={hour} className={`flex items-center p-3 rounded-xl border transition-colors ${saving ? 'opacity-50 pointer-events-none' : ''} ${isCricketBlocked && isFootball7sBlocked && isFootball11sBlocked && isFootball5sBlocked ? 'bg-red-50/50 border-red-100' : 'bg-white border-gray-200'}`}>
+                        <div className="w-1/5 font-semibold text-xs sm:text-sm text-gray-900">{time}</div>
                         
-                        <div className="w-1/4 flex justify-center">
+                        <div className="w-1/5 flex justify-center">
                           <button 
                             onClick={() => toggleSlotBlock(hour, 'cricket', isCricketBlocked)}
                             className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isCricketBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
@@ -1422,7 +1445,7 @@ const Admin = () => {
                           </button>
                         </div>
 
-                        <div className="w-1/4 flex justify-center">
+                        <div className="w-1/5 flex justify-center">
                           <button 
                             onClick={() => toggleSlotBlock(hour, 'football-7s', isFootball7sBlocked)}
                             className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isFootball7sBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
@@ -1432,13 +1455,23 @@ const Admin = () => {
                           </button>
                         </div>
 
-                        <div className="w-1/4 flex justify-center">
+                        <div className="w-1/5 flex justify-center">
                           <button 
                             onClick={() => toggleSlotBlock(hour, 'football-11s', isFootball11sBlocked)}
                             className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isFootball11sBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
                             title={isFootball11sBlocked ? "Unblock Football 11s" : "Block Football 11s"}
                           >
                             {isFootball11sBlocked ? <XCircle className="w-5 h-5 text-red-500" /> : <CheckCircle className="w-5 h-5 text-gray-400 hover:text-green-500" />}
+                          </button>
+                        </div>
+
+                        <div className="w-1/5 flex justify-center">
+                          <button 
+                            onClick={() => toggleSlotBlock(hour, 'football-5s', isFootball5sBlocked)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-transform active:scale-95 ${isFootball5sBlocked ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-100'}`}
+                            title={isFootball5sBlocked ? "Unblock Football 5s" : "Block Football 5s"}
+                          >
+                            {isFootball5sBlocked ? <XCircle className="w-5 h-5 text-red-500" /> : <CheckCircle className="w-5 h-5 text-gray-400 hover:text-green-500" />}
                           </button>
                         </div>
                       </div>

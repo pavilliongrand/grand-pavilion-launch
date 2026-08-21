@@ -110,6 +110,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
       }
 
+      // Cricket / 11s: any existing booking on the slot fully blocks it
+      // (including otherSport flag — cricket/11s use the whole ground)
+      if (occupied.otherSport) {
+        return {
+          ...slot,
+          available: false,
+          unavailableReason: occupied.reason,
+          bookingCount: occupied.bookingCount,
+          maxBookings: maxBookingsForSport,
+        };
+      }
+
       // For football (5s/7s): check field availability
       if (isFootball) {
         const totalFieldBookings = (occupied.football5sCount || 0) + (occupied.football7sCount || 0);
@@ -127,18 +139,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           };
         }
 
-        if (is5s) {
-          // 5s available if: (1) no existing 5s (one goalpost), AND (2) a free field exists
-          const has5s = (occupied.football5sCount || 0) >= 1;
-          const isStillAvailable = slot.available && !has5s && freeFields > 0;
-          return {
-            ...slot,
-            available: isStillAvailable,
-            unavailableReason: isStillAvailable ? undefined : (has5s ? 'Booked' : 'Booked'),
-            bookingCount: totalFieldBookings,
-            maxBookings: maxBookingsForSport,
-          };
-        }
+        // 5s available if: (1) no existing 5s (one goalpost), AND (2) a free field exists
+        const has5s = (occupied.football5sCount || 0) >= 1;
+        const isStillAvailable = slot.available && !has5s && freeFields > 0;
+        return {
+          ...slot,
+          available: isStillAvailable,
+          unavailableReason: isStillAvailable ? undefined : (has5s ? '5s already booked' : 'All fields booked'),
+          bookingCount: totalFieldBookings,
+          maxBookings: maxBookingsForSport,
+        };
       }
 
       // Cricket / 11s: any booking on the slot (regardless of sport) blocks it

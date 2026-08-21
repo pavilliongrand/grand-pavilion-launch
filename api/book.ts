@@ -154,6 +154,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             error: 'This slot just got booked. Please refresh and select a different time.',
           });
         }
+        // Cricket / 11s use the full ground — any existing booking blocks it
+        if (occupied.otherSport) {
+          return res.status(409).json({
+            error: 'This slot just got booked. Please refresh and select a different time.',
+          });
+        }
         if (isFootball) {
           const totalFieldBookings = (occupied.football5sCount || 0) + (occupied.football7sCount || 0);
           const freeFields = Math.max(0, maxBookingsForSport - totalFieldBookings);
@@ -165,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               });
             }
           } else if (is5s) {
-            // 5s: no existing5s (one goalpost) AND a free field exists
+            // 5s: no existing 5s (one goalpost) AND a free field exists
             const has5s = (occupied.football5sCount || 0) >= 1;
             if (has5s || freeFields <= 0) {
               return res.status(409).json({
